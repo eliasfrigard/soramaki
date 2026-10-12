@@ -188,7 +188,7 @@ export function TaskItem({ task, costTotal, locations, categories, children }: T
 
           <MoveChips task={task} />
 
-          <div className="flex flex-wrap items-center gap-2">
+          <div className="flex items-center gap-2">
             {!isDone && !isInProgress && (
               <form action={start}>
                 <SubmitButton className={PILL_BUTTON}>
@@ -212,12 +212,16 @@ export function TaskItem({ task, costTotal, locations, categories, children }: T
               </button>
             )}
             {!isEditing && (
-              <button type="button" onClick={() => setIsEditing(true)} className={PILL_BUTTON}>
-                <Pencil className="size-3.5" strokeWidth={1.75} aria-hidden />
-                Edit
+              <button
+                type="button"
+                onClick={() => setIsEditing(true)}
+                aria-label={`Edit "${task.title}"`}
+                className="ml-auto inline-flex size-10 items-center justify-center rounded-full text-faint transition-colors hover:bg-linen/5 hover:text-linen"
+              >
+                <Pencil className="size-4" strokeWidth={1.75} aria-hidden />
               </button>
             )}
-            <form action={remove} className="ml-auto">
+            <form action={remove} className={isEditing ? 'ml-auto' : ''}>
               <SubmitButton
                 ariaLabel={`Delete "${task.title}"`}
                 className="size-10 rounded-full text-faint hover:bg-berry/15 hover:text-berry-soft"
@@ -237,26 +241,28 @@ function MoveChips({ task }: { task: Task }) {
   const isQueued = task.status === 'BACKLOG';
 
   return (
-    <div className="flex flex-wrap items-center gap-1.5">
-      <span className="eyebrow mr-1">{isDone ? 'Reopen in' : 'Move to'}</span>
-      {PRIORITIES.map((value: Priority) => {
-        const isCurrent = isQueued && value === task.priority;
-        return (
-          <form key={value} action={moveTask.bind(null, task.id, value)}>
-            <SubmitButton
-              ariaLabel={`${isDone ? 'Reopen in' : 'Move to'} ${PRIORITY_META[value].label}`}
-              className={`h-8 rounded-full border px-3 text-xs ${
-                isCurrent
-                  ? 'pointer-events-none border-linen/25 bg-linen/10 text-linen'
-                  : 'border-hairline text-mute hover:border-linen/25 hover:text-linen'
-              }`}
-            >
-              <span className={`size-1.5 rounded-full ${PRIORITY_META[value].dot}`} aria-hidden />
-              {PRIORITY_META[value].label}
-            </SubmitButton>
-          </form>
-        );
-      })}
+    <div>
+      <p className="eyebrow mb-2">{isDone ? 'Reopen in' : 'Move to'}</p>
+      <div className="flex flex-wrap gap-1.5">
+        {PRIORITIES.map((value: Priority) => {
+          const isCurrent = isQueued && value === task.priority;
+          return (
+            <form key={value} action={moveTask.bind(null, task.id, value)}>
+              <SubmitButton
+                ariaLabel={`${isDone ? 'Reopen in' : 'Move to'} ${PRIORITY_META[value].label}`}
+                className={`h-9 rounded-full border px-3 text-xs ${
+                  isCurrent
+                    ? 'pointer-events-none border-linen/25 bg-linen/10 text-linen'
+                    : 'border-hairline text-mute hover:border-linen/25 hover:text-linen'
+                }`}
+              >
+                <span className={`size-1.5 rounded-full ${PRIORITY_META[value].dot}`} aria-hidden />
+                {PRIORITY_META[value].label}
+              </SubmitButton>
+            </form>
+          );
+        })}
+      </div>
     </div>
   );
 }

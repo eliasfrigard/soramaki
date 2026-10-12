@@ -15,12 +15,12 @@ const instrumentSerif = Instrument_Serif({
 });
 
 export const metadata: Metadata = {
-  title: "Porvoo Log House Tasks",
-  description: "Renovation task manager for the Porvoo log house",
+  title: "Soramäki",
+  description: "Renovation tasks for Soramäki, Tuorilanmäki 18, Porvoo",
 };
 
 export const viewport: Viewport = {
-  themeColor: "#231f20",
+  themeColor: "#131819",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {

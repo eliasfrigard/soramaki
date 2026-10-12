@@ -1,3 +1,6 @@
+import { existsSync } from 'node:fs';
+import { join } from 'node:path';
+import Image from 'next/image';
 import { Suspense, cache } from 'react';
 import { createClient } from '@/lib/supabase/server';
 import { parseTaskFilters, type StatusFilter, type TaskFilters } from '@/lib/filters';
@@ -5,41 +8,72 @@ import {
   toCategory,
   toLocation,
   toTask,
+  type Category,
   type CategoryRow,
+  type Location,
   type LocationRow,
   type Task,
   type TaskRow,
 } from '@/lib/types';
 import { FilterBar } from '@/components/FilterBar';
 import { ProjectStats } from '@/components/ProjectStats';
+import { TagManager } from '@/components/TagManager';
 import { TaskForm } from '@/components/TaskForm';
 import { TaskCard } from '@/components/TaskCard';
 
 type SearchParamsProp = Pick<PageProps<'/'>, 'searchParams'>;
 
+interface Tags {
+  locations: Location[];
+  categories: Category[];
+}
+
+const PHOTO_SRC = '/soramaki.jpg';
+
 export default function Home({ searchParams }: PageProps<'/'>) {
   return (
-    <main className="mx-auto w-full max-w-[1320px] px-5 pt-8 pb-28 sm:px-8 lg:px-12 lg:pt-16">
-      <header className="flex flex-col gap-8 border-b border-hairline pb-8 lg:flex-row lg:items-end lg:justify-between lg:gap-10 lg:pb-10">
-        <div>
-          <p className="eyebrow flex items-center gap-2.5">
-            <span className="size-2 rounded-full bg-tomato" aria-hidden />
-            Porvoo · 1890s
-          </p>
-          <h1 className="mt-3 font-serif text-[2.6rem] leading-[0.95] tracking-tight text-linen sm:text-6xl lg:mt-4">
-            Log House
-            <span className="block text-mute italic">renovation</span>
-          </h1>
-        </div>
-        <Suspense fallback={<StatsSkeleton />}>
-          <HeaderStats searchParams={searchParams} />
-        </Suspense>
-      </header>
+    <>
+      <PhotoBackdrop />
+      <main className="mx-auto w-full max-w-[1320px] px-5 pt-10 pb-16 sm:px-8 lg:px-12 lg:pt-16">
+        <header className="flex flex-col gap-8 border-b border-hairline pb-8 lg:flex-row lg:items-end lg:justify-between lg:gap-10 lg:pb-12">
+          <div>
+            <p className="eyebrow flex items-center gap-2.5">
+              <span className="size-2 rounded-full bg-berry" aria-hidden />
+              Tuorilanmäki 18 · Porvoo
+            </p>
+            <h1 className="mt-3 font-serif text-[3.5rem] leading-[0.9] tracking-tight text-linen sm:text-7xl lg:mt-4 lg:text-8xl">
+              Soramäki
+            </h1>
+          </div>
+          <Suspense fallback={<StatsSkeleton />}>
+            <HeaderStats searchParams={searchParams} />
+          </Suspense>
+        </header>
 
-      <Suspense fallback={<BoardSkeleton />}>
-        <TaskBoard searchParams={searchParams} />
-      </Suspense>
-    </main>
+        <Suspense fallback={<BoardSkeleton />}>
+          <TaskBoard searchParams={searchParams} />
+        </Suspense>
+      </main>
+    </>
+  );
+}
+
+function PhotoBackdrop() {
+  if (!existsSync(join(process.cwd(), 'public', PHOTO_SRC))) return null;
+
+  return (
+    <div className="pointer-events-none fixed inset-0 -z-10" aria-hidden>
+      <Image
+        src={PHOTO_SRC}
+        alt=""
+        fill
+        preload
+        sizes="100vw"
+        className="object-cover object-[50%_30%] saturate-[0.65]"
+      />
+      <div className="absolute inset-0 bg-ink/[0.86]" />
+      <div className="absolute inset-0 bg-linear-to-b from-transparent via-ink/30 to-ink/80" />
+    </div>
   );
 }
 
@@ -93,31 +127,33 @@ async function TaskBoard({ searchParams }: SearchParamsProp) {
 
   const locations = (locationsResult.data as LocationRow[]).map(toLocation);
   const categories = (categoriesResult.data as CategoryRow[]).map(toCategory);
-  const isCompletedView = filters.status === 'completed';
+  const tags: Tags = { locations, categories };
 
   return (
     <>
       <div className="mt-8 flex flex-col gap-4 lg:mt-10 lg:flex-row lg:items-start lg:justify-between lg:gap-10">
-        {!isCompletedView && (
-          <div className="lg:w-full lg:max-w-xl">
-            <TaskForm
-              key={`${filters.locationId}-${filters.categoryId}`}
-              locations={locations}
-              categories={categories}
-              defaultLocationId={filters.locationId}
-              defaultCategoryId={filters.categoryId}
-            />
-          </div>
-        )}
+        <div className="lg:w-full lg:max-w-xl">
+          <TaskForm
+            key={`${filters.locationId}-${filters.categoryId}`}
+            locations={locations}
+            categories={categories}
+            defaultLocationId={filters.locationId}
+            defaultCategoryId={filters.categoryId}
+          />
+        </div>
         <FilterBar locations={locations} categories={categories} filters={filters} />
       </div>
 
-      {isCompletedView ? <CompletedList tasks={tasks} /> : <Board tasks={tasks} />}
+      {filters.status === 'completed' ? <CompletedList tasks={tasks} tags={tags} /> : <Board tasks={tasks} tags={tags} />}
+
+      <div className="mt-20">
+        <TagManager locations={locations} categories={categories} />
+      </div>
     </>
   );
 }
 
-function Board({ tasks }: { tasks: Task[] }) {
+function Board({ tasks, tags }: { tasks: Task[]; tags: Tags }) {
   const inProgress = tasks.filter((t) => t.status === 'IN_PROGRESS');
   const queued = tasks.filter((t) => t.status !== 'IN_PROGRESS');
   const columns = [
@@ -139,19 +175,20 @@ function Board({ tasks }: { tasks: Task[] }) {
       {columns.map((column, index) => (
         <section key={column.title} aria-labelledby={`column-${index}`}>
           <ColumnHeading id={`column-${index}`} index={index + 1} title={column.title} count={column.tasks.length} />
-          <TaskList tasks={column.tasks} emptyText={column.emptyText} />
+          <TaskList tasks={column.tasks} tags={tags} emptyText={column.emptyText} />
         </section>
       ))}
     </div>
   );
 }
 
-function CompletedList({ tasks }: { tasks: Task[] }) {
+function CompletedList({ tasks, tags }: { tasks: Task[]; tags: Tags }) {
   return (
     <section aria-labelledby="column-done" className="mt-12 lg:mt-14">
       <ColumnHeading id="column-done" title="Completed" count={tasks.length} />
       <TaskList
         tasks={tasks}
+        tags={tags}
         emptyText="Nothing finished yet."
         className="lg:grid-cols-2 lg:gap-x-10"
       />
@@ -175,7 +212,17 @@ function ColumnHeading({ id, index, title, count }: { id: string; index?: number
   );
 }
 
-function TaskList({ tasks, emptyText, className = '' }: { tasks: Task[]; emptyText: string; className?: string }) {
+function TaskList({
+  tasks,
+  tags,
+  emptyText,
+  className = '',
+}: {
+  tasks: Task[];
+  tags: Tags;
+  emptyText: string;
+  className?: string;
+}) {
   if (tasks.length === 0) {
     return <p className="py-8 font-serif text-lg text-faint italic">{emptyText}</p>;
   }
@@ -183,7 +230,7 @@ function TaskList({ tasks, emptyText, className = '' }: { tasks: Task[]; emptyTe
   return (
     <ul className={`grid ${className}`}>
       {tasks.map((task) => (
-        <TaskCard key={task.id} task={task} />
+        <TaskCard key={task.id} task={task} locations={tags.locations} categories={tags.categories} />
       ))}
     </ul>
   );
