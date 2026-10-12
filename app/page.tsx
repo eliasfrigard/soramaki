@@ -1,69 +1,224 @@
-import Image from "next/image";
+import { Suspense, cache } from 'react';
+import { createClient } from '@/lib/supabase/server';
+import { parseTaskFilters, type StatusFilter, type TaskFilters } from '@/lib/filters';
+import {
+  toCategory,
+  toLocation,
+  toTask,
+  type CategoryRow,
+  type LocationRow,
+  type Task,
+  type TaskRow,
+} from '@/lib/types';
+import { FilterBar } from '@/components/FilterBar';
+import { ProjectStats } from '@/components/ProjectStats';
+import { TaskForm } from '@/components/TaskForm';
+import { TaskCard } from '@/components/TaskCard';
 
-export default function Home() {
+type SearchParamsProp = Pick<PageProps<'/'>, 'searchParams'>;
+
+export default function Home({ searchParams }: PageProps<'/'>) {
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert h-5 w-[100px]"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the{" "}
-            <code className="rounded bg-black/[.06] px-1.5 py-0.5 font-mono text-[0.9em] dark:bg-white/[.08]">
-              page.tsx
-            </code>{" "}
-            file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
+    <main className="mx-auto w-full max-w-[1320px] px-5 pt-8 pb-28 sm:px-8 lg:px-12 lg:pt-16">
+      <header className="flex flex-col gap-8 border-b border-hairline pb-8 lg:flex-row lg:items-end lg:justify-between lg:gap-10 lg:pb-10">
+        <div>
+          <p className="eyebrow flex items-center gap-2.5">
+            <span className="size-2 rounded-full bg-tomato" aria-hidden />
+            Porvoo · 1890s
           </p>
+          <h1 className="mt-3 font-serif text-[2.6rem] leading-[0.95] tracking-tight text-linen sm:text-6xl lg:mt-4">
+            Log House
+            <span className="block text-mute italic">renovation</span>
+          </h1>
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert h-[14px] w-4"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={14}
+        <Suspense fallback={<StatsSkeleton />}>
+          <HeaderStats searchParams={searchParams} />
+        </Suspense>
+      </header>
+
+      <Suspense fallback={<BoardSkeleton />}>
+        <TaskBoard searchParams={searchParams} />
+      </Suspense>
+    </main>
+  );
+}
+
+// Deduplicated per request so the header stats and the board share one query.
+const getTasks = cache(
+  async (status: StatusFilter, locationId?: string, categoryId?: string): Promise<Task[]> => {
+    const supabase = await createClient();
+    let query = supabase
+      .from('tasks')
+      .select('*, location:locations(*), category:categories(*), costItems:cost_items(*)');
+
+    if (locationId) query = query.eq('location_id', locationId);
+    if (categoryId) query = query.eq('category_id', categoryId);
+
+    query =
+      status === 'completed'
+        ? query.eq('status', 'DONE').order('completed_at', { ascending: false })
+        : query
+            .in('status', ['BACKLOG', 'IN_PROGRESS'])
+            .order('priority')
+            .order('created_at', { ascending: false });
+
+    const { data, error } = await query;
+    if (error) throw new Error(`Failed to load tasks: ${error.message}`);
+    return (data as TaskRow[]).map(toTask);
+  },
+);
+
+function fetchTasks(filters: TaskFilters) {
+  return getTasks(filters.status, filters.locationId, filters.categoryId);
+}
+
+async function HeaderStats({ searchParams }: SearchParamsProp) {
+  const filters = parseTaskFilters(await searchParams);
+  const tasks = await fetchTasks(filters);
+  return <ProjectStats tasks={tasks} status={filters.status} />;
+}
+
+async function TaskBoard({ searchParams }: SearchParamsProp) {
+  const filters = parseTaskFilters(await searchParams);
+  const supabase = await createClient();
+
+  const [tasks, locationsResult, categoriesResult] = await Promise.all([
+    fetchTasks(filters),
+    supabase.from('locations').select('*').order('sort_order').order('name'),
+    supabase.from('categories').select('*').order('sort_order').order('name'),
+  ]);
+
+  const error = locationsResult.error ?? categoriesResult.error;
+  if (error) throw new Error(`Failed to load data: ${error.message}`);
+
+  const locations = (locationsResult.data as LocationRow[]).map(toLocation);
+  const categories = (categoriesResult.data as CategoryRow[]).map(toCategory);
+  const isCompletedView = filters.status === 'completed';
+
+  return (
+    <>
+      <div className="mt-8 flex flex-col gap-4 lg:mt-10 lg:flex-row lg:items-start lg:justify-between lg:gap-10">
+        {!isCompletedView && (
+          <div className="lg:w-full lg:max-w-xl">
+            <TaskForm
+              key={`${filters.locationId}-${filters.categoryId}`}
+              locations={locations}
+              categories={categories}
+              defaultLocationId={filters.locationId}
+              defaultCategoryId={filters.categoryId}
             />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
+          </div>
+        )}
+        <FilterBar locations={locations} categories={categories} filters={filters} />
+      </div>
+
+      {isCompletedView ? <CompletedList tasks={tasks} /> : <Board tasks={tasks} />}
+    </>
+  );
+}
+
+function Board({ tasks }: { tasks: Task[] }) {
+  const inProgress = tasks.filter((t) => t.status === 'IN_PROGRESS');
+  const queued = tasks.filter((t) => t.status !== 'IN_PROGRESS');
+  const columns = [
+    { title: 'In progress', tasks: inProgress, emptyText: 'Nothing underway.' },
+    {
+      title: 'Up next',
+      tasks: queued.filter((t) => t.priority === 'NEXT' || t.priority === 'SOON'),
+      emptyText: 'The queue is clear.',
+    },
+    {
+      title: 'Someday',
+      tasks: queued.filter((t) => t.priority === 'LATER' || t.priority === 'MAYBE'),
+      emptyText: 'No ideas parked here.',
+    },
+  ];
+
+  return (
+    <div className="mt-12 grid gap-14 lg:mt-14 lg:grid-cols-3 lg:gap-10">
+      {columns.map((column, index) => (
+        <section key={column.title} aria-labelledby={`column-${index}`}>
+          <ColumnHeading id={`column-${index}`} index={index + 1} title={column.title} count={column.tasks.length} />
+          <TaskList tasks={column.tasks} emptyText={column.emptyText} />
+        </section>
+      ))}
+    </div>
+  );
+}
+
+function CompletedList({ tasks }: { tasks: Task[] }) {
+  return (
+    <section aria-labelledby="column-done" className="mt-12 lg:mt-14">
+      <ColumnHeading id="column-done" title="Completed" count={tasks.length} />
+      <TaskList
+        tasks={tasks}
+        emptyText="Nothing finished yet."
+        className="lg:grid-cols-2 lg:gap-x-10"
+      />
+    </section>
+  );
+}
+
+function ColumnHeading({ id, index, title, count }: { id: string; index?: number; title: string; count: number }) {
+  return (
+    <div className="flex items-baseline gap-3 border-b border-hairline pb-3">
+      {index !== undefined && (
+        <span className="text-[11px] text-faint tabular-nums" aria-hidden>
+          {String(index).padStart(2, '0')}
+        </span>
+      )}
+      <h2 id={id} className="font-serif text-2xl text-linen">
+        {title}
+      </h2>
+      <span className="ml-auto text-xs text-faint tabular-nums">{count}</span>
+    </div>
+  );
+}
+
+function TaskList({ tasks, emptyText, className = '' }: { tasks: Task[]; emptyText: string; className?: string }) {
+  if (tasks.length === 0) {
+    return <p className="py-8 font-serif text-lg text-faint italic">{emptyText}</p>;
+  }
+
+  return (
+    <ul className={`grid ${className}`}>
+      {tasks.map((task) => (
+        <TaskCard key={task.id} task={task} />
+      ))}
+    </ul>
+  );
+}
+
+function StatsSkeleton() {
+  return (
+    <div className="grid grid-cols-3 gap-4 sm:gap-10 lg:flex lg:gap-14" aria-hidden>
+      {[0, 1, 2].map((i) => (
+        <div key={i} className="flex flex-col gap-2">
+          <div className="h-3 w-16 animate-pulse rounded-full bg-linen/5" />
+          <div className="h-8 w-24 animate-pulse rounded-lg bg-linen/5" />
         </div>
-      </main>
+      ))}
+    </div>
+  );
+}
+
+function BoardSkeleton() {
+  return (
+    <div aria-busy="true" aria-label="Loading tasks">
+      <div className="mt-8 h-14 animate-pulse rounded-2xl bg-linen/5 lg:mt-10 lg:max-w-xl" />
+      <div className="mt-12 grid gap-14 lg:mt-14 lg:grid-cols-3 lg:gap-10">
+        {[0, 1, 2].map((column) => (
+          <div key={column}>
+            <div className="h-9 border-b border-hairline" />
+            {[0, 1, 2].map((row) => (
+              <div key={row} className="flex items-center gap-4 border-b border-hairline py-4 pl-3">
+                <div className="size-[22px] animate-pulse rounded-full bg-linen/5" />
+                <div className="h-3.5 flex-1 animate-pulse rounded-full bg-linen/5" />
+              </div>
+            ))}
+          </div>
+        ))}
+      </div>
     </div>
   );
 }

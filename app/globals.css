@@ -1,26 +1,100 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  /* Derived from the Soramäki photo: #591B26 #BF0436 #D1D6DC #315259 #687343 */
+  --color-ink: #131819;
+  --color-ink-raised: #1a2123;
+  --color-ink-sunken: #0e1213;
+  --color-linen: #d1d6dc;
+  --color-mute: #949da2;
+  --color-faint: #637074;
+  --color-hairline: rgb(209 214 220 / 0.09);
+  --color-accent: #82adb4;
+  --color-accent-deep: #315259;
+  --color-berry: #bf0436;
+  --color-berry-soft: #f0647f;
+  --color-moss: #687343;
+  --color-moss-soft: #b4bd86;
+  --color-wine: #591b26;
+
+  --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+  --font-serif: var(--font-instrument-serif), ui-serif, Georgia, serif;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+html {
+  color-scheme: dark;
+  background: var(--color-ink);
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  color: var(--color-linen);
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Washi-like paper grain. */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  opacity: 0.05;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+::selection {
+  background: rgb(130 173 180 / 0.35);
+  color: var(--color-linen);
+}
+
+:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+}
+
+input:focus-visible,
+select:focus-visible {
+  outline: none;
+}
+
+@layer components {
+  .field {
+    @apply h-11 w-full min-w-0 rounded-xl border border-hairline bg-ink-sunken/70 px-3.5 text-base text-linen transition-colors outline-none placeholder:text-faint focus:border-accent/50 lg:text-sm;
+  }
+
+  .select {
+    @apply h-11 w-full min-w-0 cursor-pointer appearance-none rounded-xl border border-hairline bg-ink-sunken/70 pr-9 pl-3.5 text-base text-linen transition-colors outline-none focus:border-accent/50 lg:text-sm;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='none' stroke='%23949da2' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m3 4.5 3 3 3-3'/%3E%3C/svg%3E");
+    background-position: right 0.9rem center;
+    background-repeat: no-repeat;
+  }
+
+  .disclosure {
+    @apply flex cursor-pointer list-none items-center gap-2 select-none;
+  }
+
+  .disclosure::-webkit-details-marker {
+    display: none;
+  }
+
+  .eyebrow {
+    @apply text-[11px] font-medium tracking-[0.2em] text-mute uppercase;
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .fade-in {
+    animation: fade-in 220ms ease-out both;
+  }
+
+  @keyframes fade-in {
+    from {
+      opacity: 0;
+      transform: translateY(-4px);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
 }
