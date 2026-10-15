@@ -20,6 +20,22 @@ You can start editing the page by modifying `app/page.tsx`. The page auto-update
 
 This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
 
+## Task board
+
+Tasks appear in a centered, single-column board: In progress, Up next, Someday,
+then Completed. All tasks are shown together, without global stats or filters;
+legacy filter query parameters no longer restrict the board.
+
+The full-width new-task form expands its optional priority, location, category,
+and estimated-hours fields while focus is inside the form. It collapses when
+focus leaves, preserves field values, and respects reduced-motion preferences.
+
+Each active section shows its own Budget (all estimated item costs) and Time
+(estimated task time). Above the completed list, Total Invested shows purchased
+item costs (actual cost when recorded, otherwise the estimate) and logged actual
+time for completed tasks only. Unpurchased items and unlogged time are not counted
+as spent. Completed tasks are listed most recently finished first.
+
 ## Learn More
 
 To learn more about Next.js, take a look at the following resources:
