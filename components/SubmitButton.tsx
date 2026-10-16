@@ -9,20 +9,28 @@ interface SubmitButtonProps {
   children: ReactNode;
   className?: string;
   ariaLabel?: string;
+  disabled?: boolean;
+  ariaPressed?: boolean;
+  id?: string;
 }
 
-export function SubmitButton({ children, className = '', ariaLabel }: SubmitButtonProps) {
+export function SubmitButton({ children, className = '', ariaLabel, disabled = false, ariaPressed, id }: SubmitButtonProps) {
   const pending = useContext(FormPendingContext);
 
   return (
     <button
       type="submit"
-      disabled={pending}
+      id={id}
+      disabled={pending || disabled}
       aria-label={ariaLabel}
       aria-busy={pending}
-      className={`inline-flex items-center justify-center gap-2 transition active:scale-[0.97] disabled:opacity-60 ${className}`}
+      aria-pressed={ariaPressed}
+      className={`relative inline-flex shrink-0 cursor-pointer items-center justify-center transition active:scale-[0.97] disabled:cursor-not-allowed disabled:opacity-60 ${className}`}
     >
-      {pending ? <LoaderCircle className="size-4 animate-spin" aria-hidden /> : children}
+      <span className={`inline-flex items-center justify-center gap-2 ${pending ? 'opacity-0' : ''}`}>
+        {children}
+      </span>
+      {pending && <LoaderCircle className="absolute size-4 animate-spin motion-reduce:animate-none" aria-hidden />}
     </button>
   );
 }

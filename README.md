@@ -26,15 +26,28 @@ Tasks appear in a centered, single-column board: In progress, Up next, Someday,
 then Completed. All tasks are shown together, without global stats or filters;
 legacy filter query parameters no longer restrict the board.
 
-The full-width new-task form expands its optional priority, location, category,
-and estimated-hours fields while focus is inside the form. It collapses when
-focus leaves, preserves field values, and respects reduced-motion preferences.
+The new-task form keeps title-only entry quick. Its optional priority, place,
+type, and estimated-hours fields use an explicit disclosure that stays open when
+focus leaves. Section links jump directly to each task group; the task form also
+links to place/type management.
 
 Each active section shows its own Budget (all estimated item costs) and Time
 (estimated task time). Above the completed list, Total Invested shows purchased
 item costs (actual cost when recorded, otherwise the estimate) and logged actual
-time for completed tasks only. Unpurchased items and unlogged time are not counted
-as spent. Completed tasks are listed most recently finished first.
+time for completed tasks only. The purchased-value label explains the estimated
+price fallback. Unpurchased items and unlogged time are excluded. Completed tasks
+are listed most recently finished first.
+
+Costs can be corrected inline, including their name, type, estimated price,
+optional actual paid price, and store URL. Blank actual prices use the estimate;
+an explicit zero remains a recorded actual price. Task and cost deletion require
+confirmation. Inputs lock while saving, and task mutations lock sibling controls
+until the server responds. Failures preserve drafts and appear below the affected
+row; successes are announced with a brief status message. Task moves restore
+keyboard focus to the task in its destination section.
+
+The board retains the current English copy and title/header treatment. Finnish
+translation and the new header action layout are reserved for the next milestone.
 
 ## Mutations and database schema
 

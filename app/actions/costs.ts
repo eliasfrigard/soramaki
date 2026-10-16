@@ -4,7 +4,7 @@ import { revalidatePath } from 'next/cache';
 import { createClient } from '@/lib/supabase/server';
 import { isCostType, isUuid } from '@/lib/types';
 import { databaseFailure, type ActionState } from '@/lib/action-state';
-import { parseForm, readCost, readStoreUrl, readText } from '@/lib/form-input';
+import { parseForm, readCost, readOptionalCost, readStoreUrl, readText } from '@/lib/form-input';
 
 export async function addCostItem(taskId: string, _state: ActionState, formData: FormData): Promise<ActionState> {
   if (!isUuid(taskId)) return { status: 'error', error: 'Invalid task.' };
@@ -40,6 +40,32 @@ export async function toggleCostItemPurchased(id: string, isPurchased: boolean):
     .single();
 
   if (error) return databaseFailure(error, 'Could not update the cost item. Try again.');
+  revalidatePath('/');
+  return { status: 'success' };
+}
+
+export async function updateCostItem(id: string, _state: ActionState, formData: FormData): Promise<ActionState> {
+  if (!isUuid(id)) return { status: 'error', error: 'Invalid cost item.' };
+  const costType = formData.get('cost_type');
+  if (!isCostType(costType)) return { status: 'error', error: 'Choose a valid cost type.' };
+  const input = parseForm(() => ({
+    name: readText(formData.get('name'), 'Name', 255),
+    cost_type: costType,
+    estimated_cost: readCost(formData.get('estimated_cost')),
+    actual_cost: readOptionalCost(formData.get('actual_cost')),
+    store_url: readStoreUrl(formData.get('store_url')),
+  }));
+  if (input.error !== null) return { status: 'error', error: input.error };
+
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from('cost_items')
+    .update(input.data)
+    .eq('id', id)
+    .select('id')
+    .single();
+
+  if (error) return databaseFailure(error, 'Could not save the cost item. Try again.');
   revalidatePath('/');
   return { status: 'success' };
 }

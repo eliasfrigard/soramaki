@@ -18,10 +18,13 @@ export function TaskForm({ locations, categories }: TaskFormProps) {
     <ActionForm
       action={createTask}
       ariaLabel="New task"
-      className="group/form w-full rounded-2xl border border-hairline bg-ink-raised/70 p-1.5 transition-colors focus-within:border-linen/15"
+      successMessage="Task added."
+      focusTargetId="new-task"
+      className="w-full rounded-2xl border border-hairline bg-ink-raised/70 p-2 transition-colors focus-within:border-accent/50"
     >
       <div className="flex items-center gap-1.5">
         <input
+          id="new-task"
           name="title"
           type="text"
           required
@@ -29,7 +32,7 @@ export function TaskForm({ locations, categories }: TaskFormProps) {
           autoComplete="off"
           placeholder="What needs doing?"
           aria-label="Task title"
-          className="h-11 min-w-0 flex-1 bg-transparent px-3 text-base text-linen outline-none placeholder:text-faint"
+          className="h-11 min-w-0 flex-1 scroll-mt-6 rounded-lg bg-transparent px-3 text-base text-linen placeholder:text-faint"
         />
         <SubmitButton
           ariaLabel="Add task"
@@ -39,75 +42,80 @@ export function TaskForm({ locations, categories }: TaskFormProps) {
         </SubmitButton>
       </div>
 
-      <div className="grid grid-rows-[0fr] opacity-0 transition-[grid-template-rows,opacity] duration-300 ease-out group-focus-within/form:grid-rows-[1fr] group-focus-within/form:opacity-100 motion-reduce:transition-none">
-        <div className="invisible min-h-0 overflow-hidden group-focus-within/form:visible">
-          <div className="mt-1.5 flex flex-col gap-3 border-t border-hairline px-1.5 pt-3 pb-1.5">
-            <fieldset className="flex flex-wrap gap-1.5">
-              <legend className="sr-only">Priority</legend>
-              {PRIORITIES.map((priority) => (
-                <label
-                  key={priority}
-                  className="flex h-9 cursor-pointer items-center gap-2 rounded-full border border-hairline px-3.5 text-sm text-mute transition-colors hover:text-linen has-checked:border-linen/25 has-checked:bg-linen/10 has-checked:text-linen has-focus-visible:outline-2 has-focus-visible:outline-accent"
-                >
-                  <input
-                    type="radio"
-                    name="priority"
-                    value={priority}
-                    defaultChecked={priority === 'NEXT'}
-                    className="sr-only"
-                  />
-                  <span className={`size-1.5 rounded-full ${PRIORITY_META[priority].dot}`} aria-hidden />
-                  {PRIORITY_META[priority].label}
-                </label>
-              ))}
-            </fieldset>
+      <details className="mt-2 border-t border-hairline px-2">
+        <summary className="disclosure min-h-11 text-sm text-mute hover:text-linen">
+          Task details (optional)
+        </summary>
+        <div className="flex flex-col gap-3 pb-2">
+          <fieldset className="flex flex-wrap gap-2">
+            <legend className="mb-2 text-sm text-mute">Priority</legend>
+            {PRIORITIES.map((priority) => (
+              <label
+                key={priority}
+                className="flex min-h-11 cursor-pointer items-center gap-2 rounded-full border border-hairline px-3 text-sm text-mute transition-colors hover:text-linen has-checked:border-linen/25 has-checked:bg-linen/10 has-checked:text-linen has-focus-visible:outline-2 has-focus-visible:outline-accent"
+              >
+                <input
+                  type="radio"
+                  name="priority"
+                  value={priority}
+                  defaultChecked={priority === 'NEXT'}
+                  className="sr-only"
+                />
+                <span className={`size-1.5 rounded-full ${PRIORITY_META[priority].dot}`} aria-hidden />
+                {PRIORITY_META[priority].label}
+              </label>
+            ))}
+          </fieldset>
 
-            <div className="grid grid-cols-2 gap-2 sm:grid-cols-[1fr_1fr_7rem]">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_7rem]">
+            <label className="grid min-w-0 gap-1.5 text-sm text-mute">
+              Place
               <select
                 name="location_id"
                 defaultValue=""
-                aria-label="Location"
                 className="select"
               >
-                <option value="">Location</option>
+                <option value="">No place</option>
                 {locations.map((location) => (
                   <option key={location.id} value={location.id}>
                     {location.name}
                   </option>
                 ))}
               </select>
+            </label>
+            <label className="grid min-w-0 gap-1.5 text-sm text-mute">
+              Type
               <select
                 name="category_id"
                 defaultValue=""
-                aria-label="Category"
                 className="select"
               >
-                <option value="">Category</option>
+                <option value="">No type</option>
                 {categories.map((category) => (
                   <option key={category.id} value={category.id}>
                     {category.name}
                   </option>
                 ))}
               </select>
-              <label className="relative col-span-2 sm:col-span-1">
-                <span className="sr-only">Estimated hours</span>
-                <input
-                  name="estimated_hours"
-                  inputMode="decimal"
-                  autoComplete="off"
-                  pattern={HOURS_INPUT_PATTERN}
-                  placeholder="Estimate"
-                  title="Estimated hours, e.g. 1.5"
-                  className="field pr-8"
-                />
-                <span className="pointer-events-none absolute top-1/2 right-3.5 -translate-y-1/2 text-sm text-faint" aria-hidden>
-                  h
-                </span>
-              </label>
-            </div>
+            </label>
+            <label className="grid min-w-0 gap-1.5 text-sm text-mute">
+              Estimate (h)
+              <input
+                name="estimated_hours"
+                inputMode="decimal"
+                autoComplete="off"
+                pattern={HOURS_INPUT_PATTERN}
+                placeholder="e.g. 1.5"
+                title="Estimated hours, e.g. 1.5"
+                className="field"
+              />
+            </label>
           </div>
+          <a href="#tag-manager" className="inline-flex min-h-11 items-center text-sm text-accent underline underline-offset-4">
+            Manage places and types
+          </a>
         </div>
-      </div>
+      </details>
     </ActionForm>
   );
 }

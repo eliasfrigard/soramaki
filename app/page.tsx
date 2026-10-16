@@ -17,6 +17,7 @@ import { SectionStats, TotalInvested } from '@/components/TaskStats';
 import { TagManager } from '@/components/TagManager';
 import { TaskForm } from '@/components/TaskForm';
 import { TaskCard } from '@/components/TaskCard';
+import { MutationFeedback } from '@/components/MutationFeedback';
 
 interface Tags {
   locations: Location[];
@@ -29,23 +30,25 @@ export default function Home() {
   return (
     <>
       <PhotoBackdrop />
-      <main className="mx-auto w-full max-w-[1320px] px-5 pt-10 pb-16 sm:px-8 lg:px-12 lg:pt-16">
-        <header className="flex flex-col gap-8 border-b border-hairline pb-8 lg:flex-row lg:items-end lg:justify-between lg:gap-10 lg:pb-12">
-          <div>
-            <p className="eyebrow flex items-center gap-2.5">
-              <span className="size-2 rounded-full bg-berry" aria-hidden />
-              Tuorilanmäki 18 · Porvoo
-            </p>
-            <h1 className="mt-3 font-serif text-[3.5rem] leading-[0.9] tracking-tight text-linen sm:text-7xl lg:mt-4 lg:text-8xl">
-              Soramäki
-            </h1>
-          </div>
-        </header>
+      <MutationFeedback>
+        <main className="mx-auto w-full max-w-[1320px] px-5 pt-10 pb-16 sm:px-8 lg:px-12 lg:pt-16">
+          <header className="mx-auto flex w-full max-w-3xl flex-col gap-8 border-b border-hairline pb-8 lg:flex-row lg:items-end lg:justify-between lg:gap-10 lg:pb-12">
+            <div>
+              <p className="eyebrow flex items-center gap-2.5">
+                <span className="size-2 rounded-full bg-berry" aria-hidden />
+                Tuorilanmäki 18 · Porvoo
+              </p>
+              <h1 className="mt-3 font-serif text-[3.5rem] leading-[0.9] tracking-tight text-linen sm:text-7xl lg:mt-4 lg:text-8xl">
+                Soramäki
+              </h1>
+            </div>
+          </header>
 
-        <Suspense fallback={<BoardSkeleton />}>
-          <TaskBoard />
-        </Suspense>
-      </main>
+          <Suspense fallback={<BoardSkeleton />}>
+            <TaskBoard />
+          </Suspense>
+        </main>
+      </MutationFeedback>
     </>
   );
 }
@@ -116,6 +119,14 @@ function Board({ tasks, tags }: { tasks: Task[]; tags: Tags }) {
 
   return (
     <div className="mt-12 flex flex-col gap-10 lg:mt-14">
+      <nav aria-label="Task sections" className="flex flex-wrap gap-2">
+        {[...columns.map((column, index) => ({ title: column.title, id: `column-${index}` })),
+        { title: 'Completed', id: 'column-done' }].map((column) => (
+          <a key={column.id} href={`#${column.id}`} className="inline-flex min-h-11 items-center rounded-full border border-hairline px-3 text-sm text-mute transition-colors hover:bg-linen/5 hover:text-linen">
+            {column.title}
+          </a>
+        ))}
+      </nav>
       {columns.map((column, index) => (
         <section key={column.title} aria-labelledby={`column-${index}`}>
           <ColumnHeading
@@ -161,14 +172,14 @@ function ColumnHeading({
   tasks?: Task[];
 }) {
   return (
-    <div className="flex flex-wrap items-baseline gap-x-5 gap-y-2 border-b border-hairline pb-3">
+    <div className="grid grid-cols-1 items-baseline gap-2 border-b border-hairline pb-3 sm:grid-cols-[minmax(0,1fr)_auto]">
       <div className="flex items-baseline gap-3">
         {index !== undefined && (
           <span className="text-[11px] text-faint tabular-nums" aria-hidden>
             {String(index).padStart(2, '0')}
           </span>
         )}
-        <h2 id={id} className="font-serif text-2xl text-linen">
+        <h2 id={id} tabIndex={-1} className="scroll-mt-6 font-serif text-2xl text-linen">
           {title}
         </h2>
         <span className="text-xs text-faint tabular-nums">
@@ -194,7 +205,7 @@ function TaskList({
   }
 
   return (
-    <ul className="grid">
+    <ul className="grid grid-cols-1">
       {tasks.map((task) => (
         <TaskCard key={task.id} task={task} locations={tags.locations} categories={tags.categories} />
       ))}
@@ -205,7 +216,7 @@ function TaskList({
 function BoardSkeleton() {
   return (
     <div className="mx-auto w-full max-w-3xl" aria-busy="true" aria-label="Loading tasks">
-      <div className="mt-8 h-14 animate-pulse rounded-2xl bg-linen/5 lg:mt-10" />
+      <div className="mt-8 h-28 animate-pulse rounded-2xl bg-linen/5 motion-reduce:animate-none lg:mt-10" />
       <div className="mt-12 flex flex-col gap-10 lg:mt-14">
         {[0, 1, 2, 3].map((column) => (
           <div key={column}>

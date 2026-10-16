@@ -19,7 +19,7 @@ interface TagManagerProps {
 
 export function TagManager({ locations, categories }: TagManagerProps) {
   return (
-    <details className="group border-t border-hairline">
+    <details id="tag-manager" className="group scroll-mt-6 border-t border-hairline">
       <summary className="disclosure h-14 text-sm text-mute transition-colors hover:text-linen">
         <Plus className="size-4 transition-transform group-open:rotate-45" strokeWidth={1.75} aria-hidden />
         Places &amp; types
@@ -59,16 +59,18 @@ function TagGroup({ title, placeholder, tags, createAction, deleteAction }: TagG
 
       <ul className="mt-4 flex flex-wrap gap-1.5">
         {tags.map((tag) => (
-          <li key={tag.id}>
+          <li key={tag.id} className="min-w-0 max-w-full">
             <ActionForm
               action={deleteAction.bind(null, tag.id)}
               confirmMessage={`Remove "${tag.name}"? Tasks using it will simply lose the tag.`}
-              className="flex min-h-9 flex-wrap items-center rounded-full border border-hairline pr-1 pl-3.5 text-sm text-linen"
+              successMessage={`Removed "${tag.name}".`}
+              focusTargetId={`new-${title.toLowerCase()}`}
+              className="grid min-h-11 min-w-0 grid-cols-[minmax(0,1fr)_2.75rem] items-center rounded-2xl border border-hairline pl-3 text-sm text-linen"
             >
-              {tag.name}
+              <span className="min-w-0 [overflow-wrap:anywhere]">{tag.name}</span>
               <SubmitButton
                 ariaLabel={`Remove ${tag.name}`}
-                className="ml-1 size-7 rounded-full text-faint hover:bg-berry/15 hover:text-berry-soft"
+                className="size-11 rounded-full text-mute hover:bg-berry/15 hover:text-berry-soft"
               >
                 <X className="size-3.5" strokeWidth={1.75} aria-hidden />
               </SubmitButton>
@@ -77,8 +79,9 @@ function TagGroup({ title, placeholder, tags, createAction, deleteAction }: TagG
         ))}
       </ul>
 
-      <ActionForm action={createAction} className="mt-4 flex flex-wrap gap-2">
+      <ActionForm action={createAction} successMessage={`${title.slice(0, -1)} added.`} focusTargetId={`new-${title.toLowerCase()}`} className="mt-4 flex flex-wrap gap-2">
         <input
+          id={`new-${title.toLowerCase()}`}
           name="name"
           required
           maxLength={60}

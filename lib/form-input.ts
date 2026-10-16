@@ -56,6 +56,11 @@ export function readCost(value: FormDataEntryValue | null): number {
   return Math.round(cost * 100) / 100;
 }
 
+export function readOptionalCost(value: FormDataEntryValue | null): number | null {
+  const raw = optionalText(value);
+  return raw === '' ? null : readCost(raw);
+}
+
 export function readStoreUrl(value: FormDataEntryValue | null): string | null {
   const raw = optionalText(value);
   if (raw === '') return null;

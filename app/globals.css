@@ -7,7 +7,7 @@
   --color-ink-sunken: #0e1213;
   --color-linen: #d1d6dc;
   --color-mute: #949da2;
-  --color-faint: #637074;
+  --color-faint: #879499;
   --color-hairline: rgb(209 214 220 / 0.09);
   --color-accent: #82adb4;
   --color-accent-deep: #315259;
@@ -50,11 +50,6 @@ body::before {
 :focus-visible {
   outline: 2px solid var(--color-accent);
   outline-offset: 2px;
-}
-
-input:focus-visible,
-select:focus-visible {
-  outline: none;
 }
 
 @layer components {
