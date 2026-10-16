@@ -16,7 +16,7 @@ const instrumentSerif = Instrument_Serif({
 
 export const metadata: Metadata = {
   title: "Soramäki",
-  description: "Renovation tasks for Soramäki, Tuorilanmäki 18, Porvoo",
+  description: "Soramäen remonttitehtävät, Tuorilanmäki 18, Porvoo",
 };
 
 export const viewport: Viewport = {
@@ -26,7 +26,7 @@ export const viewport: Viewport = {
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html
-      lang="en"
+      lang="fi"
       className={`${geistSans.variable} ${instrumentSerif.variable} h-full antialiased`}
     >
       <body className="flex min-h-full flex-col font-sans">{children}</body>

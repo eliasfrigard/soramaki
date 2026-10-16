@@ -28,7 +28,7 @@ interface ActionFormProps {
 
 export function ActionForm({
   action, children, className, ariaLabel, confirmMessage, onSuccess,
-  successMessage = 'Saved.', focusTargetId,
+  successMessage = 'Tallennettu.', focusTargetId,
 }: ActionFormProps) {
   const scope = useMutationScope();
   const notify = useMutationFeedback();

@@ -104,25 +104,25 @@ async function TaskBoard() {
 function Board({ tasks, tags }: { tasks: Task[]; tags: Tags }) {
   const { inProgress, upNext, someday, completed } = groupTasks(tasks);
   const columns = [
-    { title: 'In progress', tasks: inProgress, emptyText: 'Nothing underway.' },
+    { title: 'Käynnissä', tasks: inProgress, emptyText: 'Ei käynnissä olevia tehtäviä.' },
     {
-      title: 'Up next',
+      title: 'Seuraavana',
       tasks: upNext,
-      emptyText: 'The queue is clear.',
+      emptyText: 'Jonossa ei ole tehtäviä.',
     },
     {
-      title: 'Someday',
+      title: 'Joskus',
       tasks: someday,
-      emptyText: 'No ideas parked here.',
+      emptyText: 'Ei myöhemmäksi jätettyjä ideoita.',
     },
   ];
 
   return (
     <div className="mt-12 flex flex-col gap-10 lg:mt-14">
-      <nav aria-label="Task sections" className="flex flex-wrap gap-2">
+      <nav aria-label="Tehtäväosiot" className="flex flex-wrap gap-2">
         {[...columns.map((column, index) => ({ title: column.title, id: `column-${index}` })),
-        { title: 'Completed', id: 'column-done' }].map((column) => (
-          <a key={column.id} href={`#${column.id}`} className="inline-flex min-h-11 items-center rounded-full border border-hairline px-3 text-sm text-mute transition-colors hover:bg-linen/5 hover:text-linen">
+        { title: 'Valmis', id: 'column-done' }].map((column) => (
+          <a key={column.id} href={`#${column.id}`} className="inline-flex min-h-11 cursor-pointer items-center rounded-full border border-hairline px-3 text-sm text-mute transition-colors hover:bg-gray-50 hover:text-ink">
             {column.title}
           </a>
         ))}
@@ -147,12 +147,12 @@ function Board({ tasks, tags }: { tasks: Task[]; tags: Tags }) {
 function CompletedList({ tasks, tags }: { tasks: Task[]; tags: Tags }) {
   return (
     <section aria-labelledby="column-done">
-      <ColumnHeading id="column-done" title="Completed" count={tasks.length} />
+      <ColumnHeading id="column-done" title="Valmis" count={tasks.length} />
       <TotalInvested tasks={tasks} />
       <TaskList
         tasks={tasks}
         tags={tags}
-        emptyText="Nothing finished yet."
+        emptyText="Ei vielä valmiita tehtäviä."
       />
     </section>
   );
@@ -183,7 +183,7 @@ function ColumnHeading({
           {title}
         </h2>
         <span className="text-xs text-faint tabular-nums">
-          {count}<span className="sr-only"> {count === 1 ? 'task' : 'tasks'}</span>
+          {count}<span className="sr-only"> {count === 1 ? 'tehtävä' : 'tehtävää'}</span>
         </span>
       </div>
       {tasks && <SectionStats tasks={tasks} title={title} />}
@@ -215,7 +215,7 @@ function TaskList({
 
 function BoardSkeleton() {
   return (
-    <div className="mx-auto w-full max-w-3xl" aria-busy="true" aria-label="Loading tasks">
+    <div className="mx-auto w-full max-w-3xl" aria-busy="true" aria-label="Ladataan tehtäviä">
       <div className="mt-8 h-28 animate-pulse rounded-2xl bg-linen/5 motion-reduce:animate-none lg:mt-10" />
       <div className="mt-12 flex flex-col gap-10 lg:mt-14">
         {[0, 1, 2, 3].map((column) => (

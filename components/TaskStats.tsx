@@ -7,13 +7,13 @@ export function SectionStats({ tasks, title }: { tasks: Task[]; title: string })
   const { budget, estimatedMinutes } = summarizeTasks(tasks);
 
   return (
-    <dl className="flex flex-wrap gap-x-5 gap-y-1 text-xs" aria-label={`${title} summary`}>
+    <dl className="flex flex-wrap gap-x-5 gap-y-1 text-xs" aria-label={`${title}: yhteenveto`}>
       <div className="flex items-baseline gap-2">
-        <dt className="text-faint">Budget</dt>
+        <dt className="text-faint">Budjetti</dt>
         <dd className="text-mute tabular-nums">{formatEuro(budget)}</dd>
       </div>
       <div className="flex items-baseline gap-2">
-        <dt className="text-faint">Time</dt>
+        <dt className="text-faint">Aika</dt>
         <dd className="text-mute tabular-nums">{formatMinutes(estimatedMinutes)}</dd>
       </div>
     </dl>
@@ -26,15 +26,15 @@ export function TotalInvested({ tasks }: { tasks: Task[] }) {
 
   return (
     <div className="mt-4 rounded-2xl border border-hairline bg-ink-raised/70 p-5">
-      <h3 className="eyebrow">Total Invested</h3>
-      <dl className="mt-4 grid grid-cols-2 gap-4" aria-label="Total invested in completed tasks">
+      <h3 className="eyebrow">Panostukset yhteensä</h3>
+      <dl className="mt-4 grid grid-cols-2 gap-4" aria-label="Valmiisiin tehtäviin käytetty raha ja aika">
         <div className="min-w-0">
-          <dt className="text-xs text-mute">Purchased value</dt>
+          <dt className="text-xs text-mute">Ostojen arvo</dt>
           <dd className="mt-1 break-words font-serif text-3xl text-linen tabular-nums">{formatEuro(spent)}</dd>
-          <dd className="mt-1 text-xs text-mute">Actual prices where recorded; otherwise estimates</dd>
+          <dd className="mt-1 text-xs text-mute">Kirjatut toteutuneet hinnat, muuten arviot</dd>
         </div>
         <div className="min-w-0">
-          <dt className="text-xs text-mute">Time spent</dt>
+          <dt className="text-xs text-mute">Käytetty aika</dt>
           <dd className="mt-1 font-serif text-3xl text-linen tabular-nums [overflow-wrap:anywhere]">{formatMinutes(actualMinutes)}</dd>
           {workdays && <dd className="mt-1 text-xs text-faint">{workdays}</dd>}
         </div>

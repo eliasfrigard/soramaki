@@ -9,10 +9,10 @@ import { SubmitButton } from '@/components/SubmitButton';
 import { ActionForm } from '@/components/ActionForm';
 
 const COST_TYPE_LABELS: Record<CostType, string> = {
-  MATERIAL: 'Material',
-  TOOL: 'Tool',
-  CONTRACTOR: 'Contractor',
-  OTHER: 'Other',
+  MATERIAL: 'Materiaali',
+  TOOL: 'Työkalu',
+  CONTRACTOR: 'Urakoitsija',
+  OTHER: 'Muu',
 };
 
 interface CostSectionProps {
@@ -25,15 +25,15 @@ export function CostSection({ taskId, items, total }: CostSectionProps) {
   const purchasedCount = items.filter((item) => item.isPurchased).length;
 
   return (
-    <section aria-label="Costs" className="min-w-0 rounded-2xl bg-ink-sunken/60 p-3">
+    <section aria-label="Kustannukset" className="min-w-0 rounded-2xl bg-ink-sunken/60 p-3">
       {items.length > 0 && (
         <>
           <div className="grid grid-cols-[2.75rem_minmax(0,1fr)_2.75rem] items-baseline gap-x-2 pb-2 sm:grid-cols-[2.75rem_minmax(0,1fr)_auto_2.75rem_2.75rem]">
             <h3 className="col-span-full text-sm text-mute sm:col-span-2">
-              Costs · {purchasedCount}/{items.length} bought
+              Kustannukset · {purchasedCount}/{items.length} ostettu
             </h3>
             <p className="col-start-2 min-w-0 text-right text-sm text-moss-soft tabular-nums [overflow-wrap:anywhere] sm:col-start-3 sm:row-start-1">
-              <span className="block text-xs text-mute">Budget estimate</span>
+              <span className="block text-xs text-mute">Budjettiarvio</span>
               {formatEuro(total)}
             </p>
           </div>
@@ -51,10 +51,10 @@ export function CostSection({ taskId, items, total }: CostSectionProps) {
           if (event.currentTarget.open) event.currentTarget.querySelector('input')?.focus();
         }}
       >
-        <summary id={`task-${taskId}-add-cost`} className="disclosure min-h-11 text-sm text-mute transition-colors hover:text-linen">
+        <summary id={`task-${taskId}-add-cost`} className="disclosure min-h-11 rounded-lg text-sm text-mute transition-colors hover:bg-gray-50 hover:text-ink">
           <Plus className="size-3.5 transition-transform group-open:rotate-45" strokeWidth={1.75} aria-hidden />
-          <span className="group-open:hidden">Add cost item</span>
-          <span className="hidden group-open:inline">Cancel</span>
+          <span className="group-open:hidden">Lisää kustannus</span>
+          <span className="hidden group-open:inline">Peruuta</span>
         </summary>
         <CostItemForm taskId={taskId} />
       </details>
@@ -77,12 +77,12 @@ function CostItemRow({ item }: { item: CostItem }) {
     <li className="grid min-w-0 grid-cols-[2.75rem_minmax(0,1fr)_2.75rem] items-center gap-x-2 border-b border-hairline py-2 sm:grid-cols-[2.75rem_minmax(0,1fr)_auto_2.75rem_2.75rem]">
       <ActionForm
         action={togglePurchased}
-        successMessage={`Marked "${item.name}" as ${item.isPurchased ? 'not purchased' : 'purchased'}.`}
+        successMessage={`"${item.name}" merkitty ${item.isPurchased ? 'ostamattomaksi' : 'ostetuksi'}.`}
         focusTargetId={`cost-${item.id}-purchase`}
         className="contents"
       >
         <SubmitButton
-          ariaLabel={`Mark "${item.name}" as ${item.isPurchased ? 'not purchased' : 'purchased'}`}
+          ariaLabel={`Merkitse "${item.name}" ${item.isPurchased ? 'ostamattomaksi' : 'ostetuksi'}`}
           ariaPressed={item.isPurchased}
           id={`cost-${item.id}-purchase`}
           disabled={isEditing}
@@ -104,12 +104,12 @@ function CostItemRow({ item }: { item: CostItem }) {
             href={item.storeUrl}
             target="_blank"
             rel="noopener noreferrer"
-            className={`inline-flex max-w-full items-start gap-2 text-sm underline decoration-hairline underline-offset-4 transition-colors hover:decoration-accent ${item.isPurchased ? 'text-mute line-through' : 'text-linen'
+            className={`inline-flex min-h-11 max-w-full cursor-pointer items-center gap-2 rounded-lg text-sm underline decoration-hairline underline-offset-4 transition-colors hover:bg-gray-50 hover:text-ink hover:decoration-accent ${item.isPurchased ? 'text-mute line-through' : 'text-linen'
               }`}
           >
             <span className="min-w-0 [overflow-wrap:anywhere]">{item.name}</span>
             <ExternalLink className="mt-1 size-3 shrink-0 text-accent" strokeWidth={1.75} aria-hidden />
-            <span className="sr-only">(opens in new tab)</span>
+            <span className="sr-only">(avautuu uuteen välilehteen)</span>
           </a>
         ) : (
           <span className={`block text-sm [overflow-wrap:anywhere] ${item.isPurchased ? 'text-mute line-through' : 'text-linen'}`}>
@@ -120,31 +120,31 @@ function CostItemRow({ item }: { item: CostItem }) {
       </div>
 
       <span className="col-start-2 row-start-2 min-w-0 text-right text-sm text-mute tabular-nums [overflow-wrap:anywhere] sm:col-start-3 sm:row-start-1">
-        <span className="block text-xs">{item.isPurchased && item.actualCost != null ? 'Paid' : 'Estimate'}</span>
+        <span className="block text-xs">{item.isPurchased && item.actualCost != null ? 'Maksettu' : 'Arvio'}</span>
         {formatEuro(amount)}
       </span>
 
       <button
         ref={editRef}
         type="button"
-        aria-label={`Edit "${item.name}"`}
+        aria-label={`Muokkaa kustannusta "${item.name}"`}
         aria-expanded={isEditing}
         aria-controls={`cost-${item.id}-editor`}
         onClick={() => setIsEditing((value) => !value)}
-        className="col-start-3 row-start-1 inline-flex size-11 cursor-pointer items-center justify-center self-start rounded-full text-mute transition-colors hover:bg-linen/5 hover:text-linen sm:col-start-4 sm:self-center"
+        className="col-start-3 row-start-1 inline-flex size-11 cursor-pointer items-center justify-center self-start rounded-full text-mute transition-colors hover:bg-gray-50 hover:text-ink sm:col-start-4 sm:self-center"
       >
         <Pencil className="size-4" aria-hidden />
       </button>
 
       <ActionForm
         action={removeItem}
-        confirmMessage={`Delete "${item.name}"? This cannot be undone.`}
-        successMessage={`Deleted "${item.name}".`}
+        confirmMessage={`Poistetaanko "${item.name}"? Tätä ei voi perua.`}
+        successMessage={`Poistettu "${item.name}".`}
         focusTargetId={`task-${item.taskId}-add-cost`}
         className="contents"
       >
         <SubmitButton
-          ariaLabel={`Delete "${item.name}"`}
+          ariaLabel={`Poista kustannus "${item.name}"`}
           disabled={isEditing}
           className="col-start-3 row-start-2 size-11 rounded-full text-mute hover:bg-berry/15 hover:text-berry-soft sm:col-start-5 sm:row-start-1"
         >
@@ -169,8 +169,8 @@ function CostItemForm({
   return (
     <ActionForm
       action={action}
-      ariaLabel={item ? `Edit cost: ${item.name}` : 'New cost item'}
-      successMessage={item ? `Saved "${item.name}".` : 'Cost item added.'}
+      ariaLabel={item ? `Muokkaa kustannusta: ${item.name}` : 'Uusi kustannus'}
+      successMessage={item ? `Tallennettu "${item.name}".` : 'Kustannus lisätty.'}
       onSuccess={() => {
         if (onSaved) onSaved();
         else nameRef.current?.focus();
@@ -178,7 +178,7 @@ function CostItemForm({
       className="fade-in grid min-w-0 grid-cols-1 gap-3 pb-2 sm:grid-cols-2"
     >
       <label className="grid min-w-0 gap-1.5 text-sm text-mute sm:col-span-2">
-        Item name
+        Kustannuksen nimi
         <input
           ref={nameRef}
           name="name"
@@ -191,7 +191,7 @@ function CostItemForm({
         />
       </label>
       <label className="grid min-w-0 gap-1.5 text-sm text-mute">
-        Cost type
+        Kustannustyyppi
         <select name="cost_type" defaultValue={item?.costType ?? 'MATERIAL'} className="select">
           {COST_TYPES.map((type) => (
             <option key={type} value={type}>
@@ -201,20 +201,20 @@ function CostItemForm({
         </select>
       </label>
       <label className="grid min-w-0 gap-1.5 text-sm text-mute">
-        Estimated cost (€)
+        Arvioitu hinta (€)
         <input
           name="estimated_cost"
           inputMode="decimal"
           autoComplete="off"
           pattern="[0-9 ]*([.,][0-9]{1,2})?"
           defaultValue={item ? String(item.estimatedCost) : ''}
-          placeholder="0.00"
+          placeholder="0,00"
           className="field"
         />
       </label>
       {item && (
         <div className="grid min-w-0 gap-1.5 text-sm text-mute sm:col-span-2">
-          <label htmlFor={`cost-${item.id}-paid`}>Paid amount (€, optional)</label>
+          <label htmlFor={`cost-${item.id}-paid`}>Maksettu summa (€, valinnainen)</label>
           <input
             id={`cost-${item.id}-paid`}
             name="actual_cost"
@@ -224,11 +224,11 @@ function CostItemForm({
             className="field"
             aria-describedby={`cost-${item.id}-paid-hint`}
           />
-          <p id={`cost-${item.id}-paid-hint`} className="text-xs">Leave blank to use the estimate for purchased value.</p>
+          <p id={`cost-${item.id}-paid-hint`} className="text-xs">Jätä tyhjäksi, jos haluat käyttää arviota ostetun tuotteen arvona.</p>
         </div>
       )}
       <label className="grid min-w-0 gap-1.5 text-sm text-mute sm:col-span-2">
-        Store link (optional)
+        Kaupan linkki (valinnainen)
         <input
           name="store_url"
           type="url"
@@ -242,11 +242,11 @@ function CostItemForm({
       <div className="flex flex-wrap justify-end gap-2 sm:col-span-2">
         {onCancel && (
           <button type="button" onClick={onCancel} className="h-11 cursor-pointer rounded-xl px-4 text-sm text-mute hover:text-linen">
-            Cancel
+            Peruuta
           </button>
         )}
         <SubmitButton className="h-11 rounded-xl bg-linen px-5 text-sm font-medium text-ink hover:bg-white">
-          {item ? 'Save changes' : 'Add item'}
+          {item ? 'Tallenna' : 'Lisää kustannus'}
         </SubmitButton>
       </div>
     </ActionForm>

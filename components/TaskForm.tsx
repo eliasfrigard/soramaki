@@ -4,6 +4,7 @@ import { ArrowUp } from 'lucide-react';
 import { createTask } from '@/app/actions/tasks';
 import { PRIORITIES, type Category, type Location } from '@/lib/types';
 import { PRIORITY_META } from '@/lib/priority';
+import { formatCategoryName } from '@/lib/format';
 import { HOURS_INPUT_PATTERN } from '@/lib/time';
 import { ActionForm } from '@/components/ActionForm';
 import { SubmitButton } from '@/components/SubmitButton';
@@ -17,8 +18,8 @@ export function TaskForm({ locations, categories }: TaskFormProps) {
   return (
     <ActionForm
       action={createTask}
-      ariaLabel="New task"
-      successMessage="Task added."
+      ariaLabel="Uusi tehtävä"
+      successMessage="Tehtävä lisätty."
       focusTargetId="new-task"
       className="w-full rounded-2xl border border-hairline bg-ink-raised/70 p-2 transition-colors focus-within:border-accent/50"
     >
@@ -30,12 +31,12 @@ export function TaskForm({ locations, categories }: TaskFormProps) {
           required
           maxLength={255}
           autoComplete="off"
-          placeholder="What needs doing?"
-          aria-label="Task title"
-          className="h-11 min-w-0 flex-1 scroll-mt-6 rounded-lg bg-transparent px-3 text-base text-linen placeholder:text-faint"
+          placeholder="Mitä pitää tehdä?"
+          aria-label="Tehtävän nimi"
+          className="h-11 min-w-0 flex-1 scroll-mt-6 rounded-lg bg-transparent px-3 font-semibold text-lg text-linen placeholder:font-normal placeholder:text-faint"
         />
         <SubmitButton
-          ariaLabel="Add task"
+          ariaLabel="Lisää tehtävä"
           className="size-11 shrink-0 rounded-xl bg-linen text-ink hover:bg-white"
         >
           <ArrowUp className="size-5" strokeWidth={1.75} aria-hidden />
@@ -43,12 +44,12 @@ export function TaskForm({ locations, categories }: TaskFormProps) {
       </div>
 
       <details className="mt-2 border-t border-hairline px-2">
-        <summary className="disclosure min-h-11 text-sm text-mute hover:text-linen">
-          Task details (optional)
+        <summary className="disclosure min-h-11 rounded-lg text-sm text-mute transition-colors hover:bg-gray-50 hover:text-ink">
+          Tehtävän tiedot (valinnainen)
         </summary>
         <div className="flex flex-col gap-3 pb-2">
           <fieldset className="flex flex-wrap gap-2">
-            <legend className="mb-2 text-sm text-mute">Priority</legend>
+            <legend className="mb-2 text-sm text-mute">Prioriteetti</legend>
             {PRIORITIES.map((priority) => (
               <label
                 key={priority}
@@ -69,13 +70,13 @@ export function TaskForm({ locations, categories }: TaskFormProps) {
 
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_7rem]">
             <label className="grid min-w-0 gap-1.5 text-sm text-mute">
-              Place
+              Paikka
               <select
                 name="location_id"
                 defaultValue=""
                 className="select"
               >
-                <option value="">No place</option>
+                <option value="">Ei paikkaa</option>
                 {locations.map((location) => (
                   <option key={location.id} value={location.id}>
                     {location.name}
@@ -84,35 +85,35 @@ export function TaskForm({ locations, categories }: TaskFormProps) {
               </select>
             </label>
             <label className="grid min-w-0 gap-1.5 text-sm text-mute">
-              Type
+              Tyyppi
               <select
                 name="category_id"
                 defaultValue=""
                 className="select"
               >
-                <option value="">No type</option>
+                <option value="">Ei tyyppiä</option>
                 {categories.map((category) => (
                   <option key={category.id} value={category.id}>
-                    {category.name}
+                    {formatCategoryName(category.name)}
                   </option>
                 ))}
               </select>
             </label>
             <label className="grid min-w-0 gap-1.5 text-sm text-mute">
-              Estimate (h)
+              Arvio (h)
               <input
                 name="estimated_hours"
                 inputMode="decimal"
                 autoComplete="off"
                 pattern={HOURS_INPUT_PATTERN}
-                placeholder="e.g. 1.5"
-                title="Estimated hours, e.g. 1.5"
+                placeholder="esim. 1,5"
+                title="Arvioidut tunnit, esim. 1,5"
                 className="field"
               />
             </label>
           </div>
           <a href="#tag-manager" className="inline-flex min-h-11 items-center text-sm text-accent underline underline-offset-4">
-            Manage places and types
+            Hallitse paikkoja ja tyyppejä
           </a>
         </div>
       </details>

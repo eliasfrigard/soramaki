@@ -17,3 +17,14 @@ const dateFormatter = new Intl.DateTimeFormat('fi-FI', {
 export function formatDate(date: Date): string {
   return dateFormatter.format(date);
 }
+
+const categoryLabels = new Map([
+  ['Purchase', 'Hankinta'],
+  ['Construction', 'Rakentaminen'],
+  ['Maintenance', 'Kunnossapito'],
+  ['Cleaning', 'Siivous'],
+]);
+
+export function formatCategoryName(name: string): string {
+  return categoryLabels.get(name) ?? name;
+}

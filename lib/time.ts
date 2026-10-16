@@ -22,8 +22,8 @@ export function formatMinutes(totalMinutes: number): string {
 const WORKDAY_MINUTES = 8 * 60;
 const workdayFormatter = new Intl.NumberFormat('fi-FI', { maximumFractionDigits: 1 });
 
-/** 1500 -> "≈ 3,1 workdays" (8h days). Empty below one workday. */
+/** 1500 -> "≈ 3,1 työpäivää" (8h days). Empty below one workday. */
 export function formatWorkdays(totalMinutes: number): string | undefined {
   if (totalMinutes < WORKDAY_MINUTES) return undefined;
-  return `≈ ${workdayFormatter.format(totalMinutes / WORKDAY_MINUTES)} workdays`;
+  return `≈ ${workdayFormatter.format(totalMinutes / WORKDAY_MINUTES)} työpäivää`;
 }
