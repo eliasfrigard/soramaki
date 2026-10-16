@@ -2,11 +2,12 @@
 
 import { useState, type ReactNode } from 'react';
 import { Check, ChevronDown, Pause, Pencil, Play, Trash2 } from 'lucide-react';
-import { deleteTask, moveTask, updateTask, updateTaskActualTime, updateTaskStatus } from '@/app/actions/tasks';
+import { completeTask, deleteTask, moveTask, startTask, updateTask } from '@/app/actions/tasks';
 import { PRIORITIES, type Category, type Location, type Priority, type Task } from '@/lib/types';
 import { PRIORITY_META } from '@/lib/priority';
 import { formatDate, formatEuro } from '@/lib/format';
-import { HOURS_INPUT_PATTERN, formatMinutes, hoursToMinutes, parseHours } from '@/lib/time';
+import { HOURS_INPUT_PATTERN, formatMinutes } from '@/lib/time';
+import { ActionForm } from '@/components/ActionForm';
 import { SubmitButton } from '@/components/SubmitButton';
 
 const PILL_BUTTON =
@@ -29,28 +30,6 @@ export function TaskItem({ task, costTotal, locations, categories, children }: T
   const isDone = task.status === 'DONE';
   const priority = PRIORITY_META[task.priority];
   const panelId = `task-${task.id}-details`;
-
-  async function start() {
-    await updateTaskStatus(task.id, 'IN_PROGRESS');
-  }
-
-  async function complete(formData: FormData) {
-    const hours = parseHours(formData.get('actual_hours'));
-    if (hours !== null) await updateTaskActualTime(task.id, hoursToMinutes(hours));
-    await updateTaskStatus(task.id, 'DONE');
-  }
-
-  async function save(formData: FormData) {
-    const hours = parseHours(formData.get('estimated_hours'));
-    formData.delete('estimated_hours');
-    if (hours !== null) formData.set('estimated_minutes', String(hoursToMinutes(hours)));
-    await updateTask(task.id, formData);
-    setIsEditing(false);
-  }
-
-  async function remove() {
-    await deleteTask(task.id);
-  }
 
   const meta: ReactNode[] = isDone
     ? [
@@ -142,7 +121,11 @@ export function TaskItem({ task, costTotal, locations, categories, children }: T
       </div>
 
       {isCompleting && (
-        <form action={complete} className="fade-in flex items-center gap-2 pb-4 pl-11">
+        <ActionForm
+          action={completeTask.bind(null, task.id)}
+          onSuccess={() => setIsCompleting(false)}
+          className="fade-in flex flex-wrap items-center gap-2 pb-4 pl-11"
+        >
           <label className="relative min-w-0 flex-1">
             <span className="sr-only">Hours spent (optional)</span>
             <input
@@ -169,7 +152,7 @@ export function TaskItem({ task, costTotal, locations, categories, children }: T
           <SubmitButton className="h-11 shrink-0 rounded-full bg-accent-deep px-5 text-sm font-medium text-linen hover:bg-accent-deep/80">
             Done
           </SubmitButton>
-        </form>
+        </ActionForm>
       )}
 
       {isOpen && (
@@ -179,7 +162,7 @@ export function TaskItem({ task, costTotal, locations, categories, children }: T
               task={task}
               locations={locations}
               categories={categories}
-              onSave={save}
+              onSaved={() => setIsEditing(false)}
               onCancel={() => setIsEditing(false)}
             />
           ) : (
@@ -190,20 +173,20 @@ export function TaskItem({ task, costTotal, locations, categories, children }: T
 
           <div className="flex items-center gap-2">
             {!isDone && !isInProgress && (
-              <form action={start}>
+              <ActionForm action={startTask.bind(null, task.id)}>
                 <SubmitButton className={PILL_BUTTON}>
                   <Play className="size-3.5" strokeWidth={1.75} aria-hidden />
                   Start
                 </SubmitButton>
-              </form>
+              </ActionForm>
             )}
             {isInProgress && (
-              <form action={moveTask.bind(null, task.id, task.priority)}>
+              <ActionForm action={moveTask.bind(null, task.id, task.priority)}>
                 <SubmitButton className={PILL_BUTTON}>
                   <Pause className="size-3.5" strokeWidth={1.75} aria-hidden />
                   Pause
                 </SubmitButton>
-              </form>
+              </ActionForm>
             )}
             {!isDone && !isCompleting && (
               <button type="button" onClick={() => setIsCompleting(true)} className={PILL_BUTTON}>
@@ -221,14 +204,14 @@ export function TaskItem({ task, costTotal, locations, categories, children }: T
                 <Pencil className="size-4" strokeWidth={1.75} aria-hidden />
               </button>
             )}
-            <form action={remove} className={isEditing ? 'ml-auto' : ''}>
+            <ActionForm action={deleteTask.bind(null, task.id)} className={isEditing ? 'ml-auto' : ''}>
               <SubmitButton
                 ariaLabel={`Delete "${task.title}"`}
                 className="size-10 rounded-full text-faint hover:bg-berry/15 hover:text-berry-soft"
               >
                 <Trash2 className="size-4" strokeWidth={1.75} aria-hidden />
               </SubmitButton>
-            </form>
+            </ActionForm>
           </div>
         </div>
       )}
@@ -247,7 +230,7 @@ function MoveChips({ task }: { task: Task }) {
         {PRIORITIES.map((value: Priority) => {
           const isCurrent = isQueued && value === task.priority;
           return (
-            <form key={value} action={moveTask.bind(null, task.id, value)}>
+            <ActionForm key={value} action={moveTask.bind(null, task.id, value)}>
               <SubmitButton
                 ariaLabel={`${isDone ? 'Reopen in' : 'Move to'} ${PRIORITY_META[value].label}`}
                 className={`h-9 rounded-full border px-3 text-xs ${
@@ -259,7 +242,7 @@ function MoveChips({ task }: { task: Task }) {
                 <span className={`size-1.5 rounded-full ${PRIORITY_META[value].dot}`} aria-hidden />
                 {PRIORITY_META[value].label}
               </SubmitButton>
-            </form>
+            </ActionForm>
           );
         })}
       </div>
@@ -271,13 +254,17 @@ interface EditTaskFormProps {
   task: Task;
   locations: Location[];
   categories: Category[];
-  onSave: (formData: FormData) => Promise<void>;
+  onSaved: () => void;
   onCancel: () => void;
 }
 
-function EditTaskForm({ task, locations, categories, onSave, onCancel }: EditTaskFormProps) {
+function EditTaskForm({ task, locations, categories, onSaved, onCancel }: EditTaskFormProps) {
   return (
-    <form action={onSave} className="grid grid-cols-2 gap-2 rounded-2xl bg-ink-sunken/60 p-3">
+    <ActionForm
+      action={updateTask.bind(null, task.id)}
+      onSuccess={onSaved}
+      className="grid grid-cols-2 gap-2 rounded-2xl bg-ink-sunken/60 p-3"
+    >
       <input
         name="title"
         required
@@ -310,7 +297,7 @@ function EditTaskForm({ task, locations, categories, onSave, onCancel }: EditTas
           inputMode="decimal"
           autoComplete="off"
           pattern={HOURS_INPUT_PATTERN}
-          defaultValue={task.estimatedMinutes ? String(Number((task.estimatedMinutes / 60).toFixed(2))).replace('.', ',') : ''}
+          defaultValue={task.estimatedMinutes != null ? String(Number((task.estimatedMinutes / 60).toFixed(2))).replace('.', ',') : ''}
           placeholder="Estimate"
           title="Estimated hours, e.g. 1.5"
           className="field pr-8"
@@ -331,6 +318,6 @@ function EditTaskForm({ task, locations, categories, onSave, onCancel }: EditTas
           Save
         </SubmitButton>
       </div>
-    </form>
+    </ActionForm>
   );
 }

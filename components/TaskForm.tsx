@@ -4,7 +4,8 @@ import { ArrowUp } from 'lucide-react';
 import { createTask } from '@/app/actions/tasks';
 import { PRIORITIES, type Category, type Location } from '@/lib/types';
 import { PRIORITY_META } from '@/lib/priority';
-import { HOURS_INPUT_PATTERN, hoursToMinutes, parseHours } from '@/lib/time';
+import { HOURS_INPUT_PATTERN } from '@/lib/time';
+import { ActionForm } from '@/components/ActionForm';
 import { SubmitButton } from '@/components/SubmitButton';
 
 interface TaskFormProps {
@@ -13,17 +14,10 @@ interface TaskFormProps {
 }
 
 export function TaskForm({ locations, categories }: TaskFormProps) {
-  async function submit(formData: FormData) {
-    const hours = parseHours(formData.get('estimated_hours'));
-    formData.delete('estimated_hours');
-    if (hours !== null) formData.set('estimated_minutes', String(hoursToMinutes(hours)));
-    await createTask(formData);
-  }
-
   return (
-    <form
-      action={submit}
-      aria-label="New task"
+    <ActionForm
+      action={createTask}
+      ariaLabel="New task"
       className="group/form w-full rounded-2xl border border-hairline bg-ink-raised/70 p-1.5 transition-colors focus-within:border-linen/15"
     >
       <div className="flex items-center gap-1.5">
@@ -114,6 +108,6 @@ export function TaskForm({ locations, categories }: TaskFormProps) {
           </div>
         </div>
       </div>
-    </form>
+    </ActionForm>
   );
 }

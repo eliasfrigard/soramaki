@@ -3,21 +3,12 @@ export const MAX_MINUTES = 60 * 24 * 365;
 
 export const HOURS_INPUT_PATTERN = '[0-9]*([.,][0-9]{1,2})?';
 
-/** Parses hour input like "1.5" or "1,5". Returns null for empty or invalid input. */
-export function parseHours(value: FormDataEntryValue | null): number | null {
-  const normalized = String(value ?? '').trim().replace(',', '.');
-  if (normalized === '') return null;
-
-  const hours = Number(normalized);
-  return Number.isFinite(hours) && hours >= 0 ? hours : null;
-}
-
 export function hoursToMinutes(hours: number): number {
   return Math.round(hours * 60);
 }
 
 export function isValidMinutes(value: unknown): value is number {
-  return Number.isInteger(value) && (value as number) >= 0 && (value as number) <= MAX_MINUTES;
+  return typeof value === 'number' && Number.isInteger(value) && value >= 0 && value <= MAX_MINUTES;
 }
 
 /** 90 -> "1h 30m", 60 -> "1h", 45 -> "45m". */

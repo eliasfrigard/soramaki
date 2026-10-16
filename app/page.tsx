@@ -3,17 +3,15 @@ import { join } from 'node:path';
 import Image from 'next/image';
 import { Suspense } from 'react';
 import { createClient } from '@/lib/supabase/server';
+import { tasksQuery } from '@/lib/supabase/queries';
 import { groupTasks } from '@/lib/task-board';
 import {
   toCategory,
   toLocation,
   toTask,
   type Category,
-  type CategoryRow,
   type Location,
-  type LocationRow,
   type Task,
-  type TaskRow,
 } from '@/lib/types';
 import { SectionStats, TotalInvested } from '@/components/TaskStats';
 import { TagManager } from '@/components/TagManager';
@@ -75,21 +73,14 @@ async function TaskBoard() {
   const supabase = await createClient();
 
   const [tasksResult, locationsResult, categoriesResult] = await Promise.all([
-    supabase
-      .from('tasks')
-      .select('*, location:locations(*), category:categories(*), costItems:cost_items(*)')
-      .order('priority')
-      .order('created_at', { ascending: false }),
-    supabase.from('locations').select('*').order('sort_order').order('name'),
-    supabase.from('categories').select('*').order('sort_order').order('name'),
+    tasksQuery(supabase).throwOnError(),
+    supabase.from('locations').select('*').order('sort_order').order('name').throwOnError(),
+    supabase.from('categories').select('*').order('sort_order').order('name').throwOnError(),
   ]);
 
-  const error = tasksResult.error ?? locationsResult.error ?? categoriesResult.error;
-  if (error) throw new Error(`Failed to load data: ${error.message}`);
-
-  const tasks = (tasksResult.data as TaskRow[]).map(toTask);
-  const locations = (locationsResult.data as LocationRow[]).map(toLocation);
-  const categories = (categoriesResult.data as CategoryRow[]).map(toCategory);
+  const tasks = tasksResult.data.map(toTask);
+  const locations = locationsResult.data.map(toLocation);
+  const categories = categoriesResult.data.map(toCategory);
   const tags: Tags = { locations, categories };
 
   return (

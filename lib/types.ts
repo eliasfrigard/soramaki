@@ -1,8 +1,9 @@
-export const PRIORITIES = ['NEXT', 'SOON', 'LATER', 'MAYBE'] as const;
-export type Priority = (typeof PRIORITIES)[number];
+import type { Database } from './supabase/database.types';
+import type { TaskRow } from './supabase/queries';
 
-export const STATUSES = ['BACKLOG', 'IN_PROGRESS', 'DONE'] as const;
-export type Status = (typeof STATUSES)[number];
+export type Priority = Database['public']['Enums']['task_priority'];
+export const PRIORITIES = ['NEXT', 'SOON', 'LATER', 'MAYBE'] as const satisfies readonly Priority[];
+export type Status = Database['public']['Enums']['task_status'];
 
 export const COST_TYPES = ['MATERIAL', 'TOOL', 'CONTRACTOR', 'OTHER'] as const;
 export type CostType = (typeof COST_TYPES)[number];
@@ -43,7 +44,7 @@ export interface Task {
   categoryId?: string;
   location?: Location;
   category?: Category;
-  costItems?: CostItem[];
+  costItems: CostItem[];
   estimatedMinutes?: number;
   actualMinutes?: number;
   createdAt: Date;
@@ -51,45 +52,9 @@ export interface Task {
   completedAt?: Date;
 }
 
-/** Raw row shapes as returned by Supabase (snake_case, ISO strings). */
-export interface LocationRow {
-  id: string;
-  name: string;
-  icon: string | null;
-  sort_order: number;
-}
-
-export type CategoryRow = LocationRow;
-
-export interface CostItemRow {
-  id: string;
-  task_id: string;
-  name: string;
-  cost_type: CostType;
-  store_url: string | null;
-  estimated_cost: number | string;
-  actual_cost: number | string | null;
-  is_purchased: boolean;
-  created_at: string;
-}
-
-export interface TaskRow {
-  id: string;
-  title: string;
-  description: string | null;
-  status: Status;
-  priority: Priority;
-  location_id: string | null;
-  category_id: string | null;
-  location?: LocationRow | null;
-  category?: CategoryRow | null;
-  costItems?: CostItemRow[];
-  estimated_minutes: number | null;
-  actual_minutes: number | null;
-  created_at: string;
-  updated_at: string;
-  completed_at: string | null;
-}
+type LocationRow = Database['public']['Tables']['locations']['Row'];
+type CategoryRow = Database['public']['Tables']['categories']['Row'];
+type CostItemRow = Database['public']['Tables']['cost_items']['Row'];
 
 export function toLocation(row: LocationRow): Location {
   return {
@@ -103,6 +68,7 @@ export function toLocation(row: LocationRow): Location {
 export const toCategory: (row: CategoryRow) => Category = toLocation;
 
 export function toCostItem(row: CostItemRow): CostItem {
+  if (!isCostType(row.cost_type)) throw new Error(`Invalid cost type: ${row.cost_type}`);
   return {
     id: row.id,
     taskId: row.task_id,
@@ -128,7 +94,7 @@ export function toTask(row: TaskRow): Task {
     location: row.location ? toLocation(row.location) : undefined,
     category: row.category ? toCategory(row.category) : undefined,
     costItems: row.costItems
-      ?.map(toCostItem)
+      .map(toCostItem)
       .sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime()),
     estimatedMinutes: row.estimated_minutes ?? undefined,
     actualMinutes: row.actual_minutes ?? undefined,
@@ -139,15 +105,11 @@ export function toTask(row: TaskRow): Task {
 }
 
 export function isPriority(value: unknown): value is Priority {
-  return typeof value === 'string' && (PRIORITIES as readonly string[]).includes(value);
-}
-
-export function isStatus(value: unknown): value is Status {
-  return typeof value === 'string' && (STATUSES as readonly string[]).includes(value);
+  return typeof value === 'string' && PRIORITIES.some((priority) => priority === value);
 }
 
 export function isCostType(value: unknown): value is CostType {
-  return typeof value === 'string' && (COST_TYPES as readonly string[]).includes(value);
+  return typeof value === 'string' && COST_TYPES.some((type) => type === value);
 }
 
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;

@@ -1,8 +1,9 @@
 'use client';
 
-import { useFormStatus } from 'react-dom';
+import { useContext } from 'react';
 import { LoaderCircle } from 'lucide-react';
 import type { ReactNode } from 'react';
+import { FormPendingContext } from '@/components/ActionForm';
 
 interface SubmitButtonProps {
   children: ReactNode;
@@ -11,7 +12,7 @@ interface SubmitButtonProps {
 }
 
 export function SubmitButton({ children, className = '', ariaLabel }: SubmitButtonProps) {
-  const { pending } = useFormStatus();
+  const pending = useContext(FormPendingContext);
 
   return (
     <button

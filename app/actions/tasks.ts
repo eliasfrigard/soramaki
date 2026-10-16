@@ -2,114 +2,112 @@
 
 import { revalidatePath } from 'next/cache';
 import { createClient } from '@/lib/supabase/server';
-import { isPriority, isStatus, isUuid, type Priority, type Status } from '@/lib/types';
-import { isValidMinutes } from '@/lib/time';
+import { isPriority, isUuid, type Priority } from '@/lib/types';
+import { databaseFailure, type ActionState } from '@/lib/action-state';
+import { parseForm, readHours, readOptionalUuid, readText } from '@/lib/form-input';
 
-const MAX_TITLE_LENGTH = 255;
-
-function optionalUuid(value: FormDataEntryValue | null): string | null {
-  return isUuid(value) ? value : null;
+function taskFields(formData: FormData) {
+  return parseForm(() => ({
+    title: readText(formData.get('title'), 'Title', 255),
+    location_id: readOptionalUuid(formData.get('location_id'), 'place'),
+    category_id: readOptionalUuid(formData.get('category_id'), 'type'),
+    estimated_minutes: readHours(formData.get('estimated_hours')),
+  }));
 }
 
-function optionalMinutes(value: FormDataEntryValue | null): number | null {
-  if (value === null || value === '') return null;
-  const minutes = Number(value);
-  if (!isValidMinutes(minutes)) throw new Error('Estimated time is out of range.');
-  return minutes;
-}
-
-export async function createTask(formData: FormData): Promise<void> {
-  const title = String(formData.get('title') ?? '').trim();
-  if (!title || title.length > MAX_TITLE_LENGTH) {
-    throw new Error(`Title must be 1–${MAX_TITLE_LENGTH} characters.`);
-  }
-
-  const priorityInput = formData.get('priority');
-  const priority = isPriority(priorityInput) ? priorityInput : 'NEXT';
-  const location_id = optionalUuid(formData.get('location_id'));
-  const category_id = optionalUuid(formData.get('category_id'));
-  const estimated_minutes = optionalMinutes(formData.get('estimated_minutes'));
+export async function createTask(_state: ActionState, formData: FormData): Promise<ActionState> {
+  const input = taskFields(formData);
+  if (input.error !== null) return { status: 'error', error: input.error };
+  const priority = formData.get('priority') ?? 'NEXT';
+  if (!isPriority(priority)) return { status: 'error', error: 'Choose a valid priority.' };
 
   const supabase = await createClient();
   const { error } = await supabase
     .from('tasks')
-    .insert({ title, priority, status: 'BACKLOG', location_id, category_id, estimated_minutes });
+    .insert({ ...input.data, priority, status: 'BACKLOG' });
 
-  if (error) throw new Error(`Failed to create task: ${error.message}`);
+  if (error) return databaseFailure(error, 'Could not create the task. Try again.');
   revalidatePath('/');
+  return { status: 'success' };
 }
 
-export async function updateTaskStatus(id: string, status: Status): Promise<void> {
-  if (!isStatus(status)) throw new Error('Invalid status.');
+export async function startTask(id: string): Promise<ActionState> {
+  if (!isUuid(id)) return { status: 'error', error: 'Invalid task.' };
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from('tasks')
+    .update({ status: 'IN_PROGRESS', completed_at: null })
+    .eq('id', id)
+    .select('id')
+    .single();
+
+  if (error) return databaseFailure(error, 'Could not start the task. Try again.');
+  revalidatePath('/');
+  return { status: 'success' };
+}
+
+export async function completeTask(id: string, _state: ActionState, formData: FormData): Promise<ActionState> {
+  if (!isUuid(id)) return { status: 'error', error: 'Invalid task.' };
+  const input = parseForm(() => readHours(formData.get('actual_hours')));
+  if (input.error !== null) return { status: 'error', error: input.error };
 
   const supabase = await createClient();
   const { error } = await supabase
     .from('tasks')
     .update({
-      status,
-      completed_at: status === 'DONE' ? new Date().toISOString() : null,
+      status: 'DONE',
+      completed_at: new Date().toISOString(),
+      ...(input.data === null ? {} : { actual_minutes: input.data }),
     })
-    .eq('id', id);
+    .eq('id', id)
+    .select('id')
+    .single();
 
-  if (error) throw new Error(`Failed to update task: ${error.message}`);
+  if (error) return databaseFailure(error, 'Could not complete the task. Try again.');
   revalidatePath('/');
+  return { status: 'success' };
 }
 
-/** Puts a task (back) into a priority bucket: pauses started tasks and reopens done ones. */
-export async function moveTask(id: string, priority: Priority): Promise<void> {
-  if (!isUuid(id) || !isPriority(priority)) throw new Error('Invalid input.');
-
+/** Pauses started tasks and reopens completed ones in the chosen priority bucket. */
+export async function moveTask(id: string, priority: Priority): Promise<ActionState> {
+  if (!isUuid(id) || !isPriority(priority)) return { status: 'error', error: 'Invalid task or priority.' };
   const supabase = await createClient();
   const { error } = await supabase
     .from('tasks')
     .update({ priority, status: 'BACKLOG', completed_at: null })
-    .eq('id', id);
+    .eq('id', id)
+    .select('id')
+    .single();
 
-  if (error) throw new Error(`Failed to move task: ${error.message}`);
+  if (error) return databaseFailure(error, 'Could not move the task. Try again.');
   revalidatePath('/');
+  return { status: 'success' };
 }
 
-export async function updateTask(id: string, formData: FormData): Promise<void> {
-  if (!isUuid(id)) throw new Error('Invalid task.');
-
-  const title = String(formData.get('title') ?? '').trim();
-  if (!title || title.length > MAX_TITLE_LENGTH) {
-    throw new Error(`Title must be 1–${MAX_TITLE_LENGTH} characters.`);
-  }
+export async function updateTask(id: string, _state: ActionState, formData: FormData): Promise<ActionState> {
+  if (!isUuid(id)) return { status: 'error', error: 'Invalid task.' };
+  const input = taskFields(formData);
+  if (input.error !== null) return { status: 'error', error: input.error };
 
   const supabase = await createClient();
   const { error } = await supabase
     .from('tasks')
-    .update({
-      title,
-      location_id: optionalUuid(formData.get('location_id')),
-      category_id: optionalUuid(formData.get('category_id')),
-      estimated_minutes: optionalMinutes(formData.get('estimated_minutes')),
-    })
-    .eq('id', id);
+    .update(input.data)
+    .eq('id', id)
+    .select('id')
+    .single();
 
-  if (error) throw new Error(`Failed to update task: ${error.message}`);
+  if (error) return databaseFailure(error, 'Could not save the task. Try again.');
   revalidatePath('/');
+  return { status: 'success' };
 }
 
-export async function updateTaskActualTime(taskId: string, actualMinutes: number): Promise<void> {
-  if (!isUuid(taskId)) throw new Error('Invalid task.');
-  if (!isValidMinutes(actualMinutes)) throw new Error('Actual time is out of range.');
-
-  const supabase = await createClient();
-  const { error } = await supabase
-    .from('tasks')
-    .update({ actual_minutes: actualMinutes })
-    .eq('id', taskId);
-
-  if (error) throw new Error(`Failed to log time: ${error.message}`);
-  revalidatePath('/');
-}
-
-export async function deleteTask(id: string): Promise<void> {
+export async function deleteTask(id: string): Promise<ActionState> {
+  if (!isUuid(id)) return { status: 'error', error: 'Invalid task.' };
   const supabase = await createClient();
   const { error } = await supabase.from('tasks').delete().eq('id', id);
 
-  if (error) throw new Error(`Failed to delete task: ${error.message}`);
+  if (error) return databaseFailure(error, 'Could not delete the task. Try again.');
   revalidatePath('/');
+  return { status: 'success' };
 }

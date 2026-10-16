@@ -9,7 +9,7 @@ interface TaskCardProps {
 }
 
 export function TaskCard({ task, locations, categories }: TaskCardProps) {
-  const costItems = task.costItems ?? [];
+  const costItems = task.costItems;
   const costTotal = costItems.reduce((sum, item) => sum + item.estimatedCost, 0);
 
   return (

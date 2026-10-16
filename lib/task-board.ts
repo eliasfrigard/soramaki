@@ -31,7 +31,7 @@ export function summarizeTasks(tasks: Task[]) {
   for (const task of tasks) {
     estimatedMinutes += task.estimatedMinutes ?? 0;
     actualMinutes += task.actualMinutes ?? 0;
-    for (const item of task.costItems ?? []) {
+    for (const item of task.costItems) {
       budget += item.estimatedCost;
       if (item.isPurchased) spent += item.actualCost ?? item.estimatedCost;
     }

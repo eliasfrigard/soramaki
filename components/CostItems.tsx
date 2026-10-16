@@ -3,6 +3,7 @@ import { addCostItem, deleteCostItem, toggleCostItemPurchased } from '@/app/acti
 import { COST_TYPES, type CostItem, type CostType } from '@/lib/types';
 import { formatEuro } from '@/lib/format';
 import { SubmitButton } from '@/components/SubmitButton';
+import { ActionForm } from '@/components/ActionForm';
 
 const COST_TYPE_LABELS: Record<CostType, string> = {
   MATERIAL: 'Material',
@@ -56,7 +57,7 @@ function CostItemRow({ item }: { item: CostItem }) {
 
   return (
     <li className="group/item flex items-center gap-1 border-b border-hairline">
-      <form action={togglePurchased}>
+      <ActionForm action={togglePurchased}>
         <SubmitButton
           ariaLabel={`Mark "${item.name}" as ${item.isPurchased ? 'not purchased' : 'purchased'}`}
           className="size-10 shrink-0"
@@ -70,7 +71,7 @@ function CostItemRow({ item }: { item: CostItem }) {
             {item.isPurchased && <Check className="size-3" strokeWidth={3} />}
           </span>
         </SubmitButton>
-      </form>
+      </ActionForm>
 
       <div className="min-w-0 flex-1 py-2">
         {item.storeUrl ? (
@@ -96,14 +97,14 @@ function CostItemRow({ item }: { item: CostItem }) {
 
       <span className="shrink-0 pl-2 text-sm text-mute tabular-nums">{formatEuro(item.estimatedCost)}</span>
 
-      <form action={removeItem}>
+      <ActionForm action={removeItem}>
         <SubmitButton
           ariaLabel={`Delete "${item.name}"`}
           className="size-9 shrink-0 rounded-full text-faint hover:text-berry-soft lg:opacity-0 lg:group-hover/item:opacity-100 lg:focus-visible:opacity-100"
         >
           <X className="size-3.5" strokeWidth={1.75} aria-hidden />
         </SubmitButton>
-      </form>
+      </ActionForm>
     </li>
   );
 }
@@ -112,7 +113,7 @@ function CostItemForm({ taskId }: { taskId: string }) {
   const addItem = addCostItem.bind(null, taskId);
 
   return (
-    <form action={addItem} className="fade-in grid grid-cols-2 gap-2 pb-2">
+    <ActionForm action={addItem} className="fade-in grid grid-cols-2 gap-2 pb-2">
       <input
         name="name"
         required
@@ -155,6 +156,6 @@ function CostItemForm({ taskId }: { taskId: string }) {
       <SubmitButton className="col-span-2 h-11 rounded-xl bg-linen text-sm font-medium text-ink hover:bg-white">
         Add item
       </SubmitButton>
-    </form>
+    </ActionForm>
   );
 }
