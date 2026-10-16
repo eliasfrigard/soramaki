@@ -13,16 +13,22 @@ export function parseForm<T>(read: () => T): { data: T; error: null } | { data: 
 }
 
 export function readText(value: FormDataEntryValue | null, label: string, maxLength: number): string {
-  if (typeof value !== 'string' || !value.trim() || value.trim().length > maxLength) {
+  const text = typeof value === 'string' ? value.replace(/\r\n/g, '\n').trim() : '';
+  if (!text || text.length > maxLength) {
     throw new ValidationError(`${label} must be 1-${maxLength} characters.`);
   }
-  return value.trim();
+  return text;
 }
 
 function optionalText(value: FormDataEntryValue | null): string {
   if (value === null) return '';
   if (typeof value !== 'string') throw new ValidationError('Expected a text value.');
   return value.trim();
+}
+
+export function readOptionalText(value: FormDataEntryValue | null, label: string, maxLength: number): string | null {
+  const raw = optionalText(value);
+  return raw === '' ? null : readText(raw, label, maxLength);
 }
 
 export function readOptionalUuid(value: FormDataEntryValue | null, label: string): string | null {

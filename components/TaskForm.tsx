@@ -2,7 +2,7 @@
 
 import { ArrowUp } from 'lucide-react';
 import { createTask } from '@/app/actions/tasks';
-import { PRIORITIES, type Category, type Location } from '@/lib/types';
+import { CONTEXT_TEXT_MAX_LENGTH, PRIORITIES, type Category, type Location } from '@/lib/types';
 import { PRIORITY_META } from '@/lib/priority';
 import { formatCategoryName } from '@/lib/format';
 import { HOURS_INPUT_PATTERN } from '@/lib/time';
@@ -48,6 +48,15 @@ export function TaskForm({ locations, categories }: TaskFormProps) {
           Tehtävän tiedot (valinnainen)
         </summary>
         <div className="flex flex-col gap-3 pb-2">
+          <label className="grid min-w-0 gap-1.5 text-sm text-mute">
+            Kuvaus
+            <textarea
+              name="description"
+              rows={3}
+              maxLength={CONTEXT_TEXT_MAX_LENGTH}
+              className="field h-auto min-h-24 resize-y py-3"
+            />
+          </label>
           <fieldset className="flex flex-wrap gap-2">
             <legend className="mb-2 text-sm text-mute">Prioriteetti</legend>
             {PRIORITIES.map((priority) => (

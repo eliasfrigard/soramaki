@@ -4,7 +4,7 @@ import type { Database } from './database.types';
 export function tasksQuery(client: SupabaseClient<Database>) {
   return client
     .from('tasks')
-    .select('*, location:locations(*), category:categories(*), costItems:cost_items(*)')
+    .select('*, location:locations(*), category:categories(*), costItems:cost_items(*), comments(*)')
     .order('priority')
     .order('created_at', { ascending: false });
 }

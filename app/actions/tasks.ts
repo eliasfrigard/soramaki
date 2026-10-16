@@ -2,13 +2,14 @@
 
 import { revalidatePath } from 'next/cache';
 import { createClient } from '@/lib/supabase/server';
-import { isPriority, isUuid, type Priority } from '@/lib/types';
+import { CONTEXT_TEXT_MAX_LENGTH, isPriority, isUuid, type Priority } from '@/lib/types';
 import { databaseFailure, type ActionState } from '@/lib/action-state';
-import { parseForm, readHours, readOptionalUuid, readText } from '@/lib/form-input';
+import { parseForm, readHours, readOptionalText, readOptionalUuid, readText } from '@/lib/form-input';
 
 function taskFields(formData: FormData) {
   return parseForm(() => ({
     title: readText(formData.get('title'), 'Title', 255),
+    description: readOptionalText(formData.get('description'), 'Description', CONTEXT_TEXT_MAX_LENGTH),
     location_id: readOptionalUuid(formData.get('location_id'), 'place'),
     category_id: readOptionalUuid(formData.get('category_id'), 'type'),
     estimated_minutes: readHours(formData.get('estimated_hours')),

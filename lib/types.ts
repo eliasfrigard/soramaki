@@ -5,6 +5,8 @@ export type Priority = Database['public']['Enums']['task_priority'];
 export const PRIORITIES = ['NEXT', 'SOON', 'LATER', 'MAYBE'] as const satisfies readonly Priority[];
 export type Status = Database['public']['Enums']['task_status'];
 
+export const CONTEXT_TEXT_MAX_LENGTH = 10_000;
+
 export const COST_TYPES = ['MATERIAL', 'TOOL', 'CONTRACTOR', 'OTHER'] as const;
 export type CostType = (typeof COST_TYPES)[number];
 
@@ -34,10 +36,18 @@ export interface Category {
   sortOrder: number;
 }
 
+export interface TaskComment {
+  id: string;
+  taskId: string;
+  userId?: string;
+  content: string;
+  createdAt: Date;
+}
+
 export interface Task {
   id: string;
   title: string;
-  description?: string;
+  description?: string | null;
   status: Status;
   priority: Priority;
   locationId?: string;
@@ -45,6 +55,7 @@ export interface Task {
   location?: Location;
   category?: Category;
   costItems: CostItem[];
+  comments: TaskComment[];
   estimatedMinutes?: number;
   actualMinutes?: number;
   createdAt: Date;
@@ -55,6 +66,7 @@ export interface Task {
 type LocationRow = Database['public']['Tables']['locations']['Row'];
 type CategoryRow = Database['public']['Tables']['categories']['Row'];
 type CostItemRow = Database['public']['Tables']['cost_items']['Row'];
+type CommentRow = Database['public']['Tables']['comments']['Row'];
 
 export function toLocation(row: LocationRow): Location {
   return {
@@ -82,6 +94,16 @@ export function toCostItem(row: CostItemRow): CostItem {
   };
 }
 
+export function toComment(row: CommentRow): TaskComment {
+  return {
+    id: row.id,
+    taskId: row.task_id,
+    userId: row.user_id ?? undefined,
+    content: row.content,
+    createdAt: new Date(row.created_at),
+  };
+}
+
 export function toTask(row: TaskRow): Task {
   return {
     id: row.id,
@@ -96,6 +118,9 @@ export function toTask(row: TaskRow): Task {
     costItems: row.costItems
       .map(toCostItem)
       .sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime()),
+    comments: row.comments
+      .map(toComment)
+      .sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime() || a.id.localeCompare(b.id)),
     estimatedMinutes: row.estimated_minutes ?? undefined,
     actualMinutes: row.actual_minutes ?? undefined,
     createdAt: new Date(row.created_at),

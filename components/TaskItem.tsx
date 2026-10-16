@@ -3,13 +3,14 @@
 import { useRef, useState, type ReactNode } from 'react';
 import { Check, ChevronDown, Pause, Pencil, Play, Trash2 } from 'lucide-react';
 import { completeTask, deleteTask, moveTask, startTask, updateTask } from '@/app/actions/tasks';
-import { PRIORITIES, type Category, type Location, type Priority, type Task } from '@/lib/types';
+import { CONTEXT_TEXT_MAX_LENGTH, PRIORITIES, type Category, type Location, type Priority, type Task } from '@/lib/types';
 import { PRIORITY_META } from '@/lib/priority';
 import { formatCategoryName, formatDate, formatEuro } from '@/lib/format';
 import { HOURS_INPUT_PATTERN, formatMinutes } from '@/lib/time';
 import { ActionForm } from '@/components/ActionForm';
 import { SubmitButton } from '@/components/SubmitButton';
 import { MutationScope } from '@/components/MutationFeedback';
+import { Comments } from '@/components/Comments';
 
 const PILL_BUTTON =
   'inline-flex min-h-11 shrink-0 cursor-pointer items-center gap-2 rounded-full border border-hairline px-4 text-sm text-linen transition-colors hover:border-linen/25 hover:bg-gray-50 hover:text-ink active:scale-[0.97]';
@@ -202,6 +203,14 @@ export function TaskItem({ task, costTotal, locations, categories, children }: T
 
         {isOpen && (
           <div id={panelId} className="fade-in flex min-w-0 flex-col gap-4 px-2 pb-5">
+            {!isEditing && task.description && (
+              <section aria-label="Kuvaus" className="min-w-0">
+                <h3 className="eyebrow mb-2">Kuvaus</h3>
+                <p className="whitespace-pre-wrap text-sm leading-relaxed text-linen [overflow-wrap:anywhere]">
+                  {task.description}
+                </p>
+              </section>
+            )}
             <div hidden={isEditing}>{children}</div>
             {isEditing && (
               <EditTaskForm
@@ -247,7 +256,7 @@ export function TaskItem({ task, costTotal, locations, categories, children }: T
                   </button>
                   <ActionForm
                     action={deleteTask.bind(null, task.id)}
-                    confirmMessage={`Poistetaanko "${task.title}" ja siihen liittyvät kustannukset (${task.costItems.length} kpl)? Tätä ei voi perua.`}
+                    confirmMessage={`Poistetaanko "${task.title}" ja siihen liittyvät kustannukset (${task.costItems.length} kpl) sekä kommentit (${task.comments.length} kpl)? Tätä ei voi perua.`}
                     successMessage={`Poistettu "${task.title}".`}
                     focusTargetId={sectionId}
                     className="contents"
@@ -262,6 +271,7 @@ export function TaskItem({ task, costTotal, locations, categories, children }: T
                 </>
               )}
             </div>
+            {!isEditing && <Comments taskId={task.id} comments={task.comments} />}
           </div>
         )}
       </MutationScope>
@@ -335,6 +345,16 @@ function EditTaskForm({ task, locations, categories, onSaved, onCancel }: EditTa
           defaultValue={task.title}
           autoFocus
           className="field"
+        />
+      </label>
+      <label className="grid min-w-0 gap-1.5 text-sm text-mute sm:col-span-2">
+        Kuvaus
+        <textarea
+          name="description"
+          rows={3}
+          maxLength={CONTEXT_TEXT_MAX_LENGTH}
+          defaultValue={task.description ?? ''}
+          className="field h-auto min-h-24 resize-y py-3"
         />
       </label>
       <label className="grid min-w-0 gap-1.5 text-sm text-mute">

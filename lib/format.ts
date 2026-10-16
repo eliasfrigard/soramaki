@@ -18,6 +18,16 @@ export function formatDate(date: Date): string {
   return dateFormatter.format(date);
 }
 
+const dateTimeFormatter = new Intl.DateTimeFormat('fi-FI', {
+  dateStyle: 'short',
+  timeStyle: 'short',
+  timeZone: 'Europe/Helsinki',
+});
+
+export function formatDateTime(date: Date): string {
+  return dateTimeFormatter.format(date);
+}
+
 const categoryLabels = new Map([
   ['Purchase', 'Hankinta'],
   ['Construction', 'Rakentaminen'],
